@@ -8,6 +8,9 @@ def get_all_sum(db):
         for k in row:
             row[k] = int(row[k])
         row.update({'NAME': key.split(app.config['REDIS_KEYS_PREFIX'])[1]})
+        key = app.config['REDIS_HOUR_KEYS_PREFIX'] + key
+        req_per_hour = sum([int(count) for count in db.lrange(key, 0, db.llen(key) - 1)])
+        row.update({'REQUESTS_PER_HOUR': req_per_hour})
         res += [row]
     return res
 

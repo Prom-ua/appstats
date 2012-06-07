@@ -22,7 +22,7 @@ def average():
     for row in data:
         req_count = row['REQUESTS']
         for k in row:
-            if k != 'NAME' and k != 'REQUESTS':
+            if k in g.fields:
                 row[k] = float(row[k])/req_count
     return render_template("main_page.html", data=data)
 
