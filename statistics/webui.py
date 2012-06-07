@@ -16,6 +16,16 @@ def main_page():
         data = sorted(data, key=lambda row: row[sort_by])
     return render_template("main_page.html", data=data)
 
+@app.route("/average/")
+def average():
+    data = get_all_sum(g.db)
+    for row in data:
+        req_count = row['REQUESTS']
+        for k in row:
+            if k != 'NAME' and k != 'REQUESTS':
+                row[k] = float(row[k])/req_count
+    return render_template("main_page.html", data=data)
+
 @app.route("/add/")
 def add_page():
     key = request.args.get('KEY')
