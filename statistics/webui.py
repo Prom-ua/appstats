@@ -1,6 +1,5 @@
 from flask import render_template, g, redirect, request
 from db import connect_db, get_all_sum
-import redis
 
 from statistics import app
 
