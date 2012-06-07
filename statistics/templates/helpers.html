@@ -1,0 +1,20 @@
+{% macro draw_table(data, fields) -%}
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                {% for field in fields %}
+                    <th> <a href="{{ url_for('main_page', sort_by=field) }}"> {{ field }} </a> </th>
+                {% endfor %}
+            </tr>
+            <tbody>
+                {% for row in data %}
+                    <tr>
+                        {% for field in fields %}
+                            <td> {{ row[field] }} </td>     
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </thead>
+    </table>
+{%- endmacro %}
