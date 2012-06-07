@@ -14,8 +14,7 @@ def main_page():
     sort_by = request.args.get('sort_by', None)
     data = get_all_sum(g.db)
     if sort_by:
-        data = sorted(data, key=lambda row: int(row[sort_by]))
-        print data
+        data = sorted(data, key=lambda row: row[sort_by])
     return render_template("main_page.html", data=data)
 
 @app.route("/add/")
@@ -26,4 +25,5 @@ def add_page():
         old_val = int(g.db.hget(key, field) or '0')
         new_val += old_val
         g.db.hset(key, field, new_val)
+    g.db.hincrby(key, "REQUESTS", "1")
     return redirect("/")

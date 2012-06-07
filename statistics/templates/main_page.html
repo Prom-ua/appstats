@@ -4,10 +4,11 @@
     <table class="table table-bordered table-striped">
         <thead>
             <tr>
-                <th> Controller.action </th>
+                <th> <a href="{{ url_for('main_page', sort_by='NAME') }}"> NAME </a> </th>
                 {% for field in g.fields %}
                     <th> <a href="{{ url_for('main_page', sort_by=field) }}"> {{ field }} </a> </th>
                 {% endfor %}
+                <th> <a href="{{ url_for('main_page', sort_by='REQUESTS') }}"> REQUESTS </a> </th>
             </tr>
             <tbody>
                 {% for row in data %}
@@ -16,6 +17,7 @@
                         {% for field in g.fields %}
                             <td> {{ row[field] }} </td>     
                         {% endfor %}
+                        <td> {{row['REQUESTS']}} </td>
                     </tr>
                 {% endfor %}
             </tbody>
