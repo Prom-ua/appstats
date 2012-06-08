@@ -13,7 +13,7 @@ def main_page():
     sort_by = request.args.get('sort_by', None)
     data = g.db.get_all('day')
     if sort_by:
-        hour_data = sorted(data, key=lambda row: row[sort_by])
+        data = sorted(data, key=lambda row: row[sort_by])
     return render_template("main_page.html", data=data)
 
 @app.route("/day_aver/")

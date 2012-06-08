@@ -2,36 +2,50 @@ from statistics import app
 import redis
 
 class RedisDB(object):
-    def __init__(self, host=None, port=None):
+    def __init__(self, host=None, port=None, day_parts=24, hour_parts=60):
         self.host = host or app.config['REDIS_HOST']
         self.port = port or app.config['REDIS_PORT']
+        self.day_parts = day_parts
+        self.hour_parts = hour_parts
+        self.set_key = app.config['REDIS_KEYS_PREFIX'] + 'keys'
         self.db = redis.Redis(host=self.host, port=self.port)
 
     def __contains__(self, name):
         key_prefix = RedisDB.make_key('min', name)
-        for key in self.db.keys(key_prefix + '*'):
+        for key in self.get_keys_starts_with(key_prefix):
             name_from_db = RedisDB.split_key(key)['name']
             if name == name_from_db:
                 return True
         return False
+
+    def get_keys_starts_with(self, prefix):
+        res = []
+        keys = self.db.smembers(self.set_key)
+        for key in keys:
+            if key.startswith(prefix):
+                res += [key]
+        return res
     
     def add_name(self, name, fields):
         for field in fields:
             pl = self.db.pipeline()
             key = RedisDB.make_key('min', name, field)
             pl.set(key, 0)
+            pl.sadd(self.set_key, key)
             key = RedisDB.make_key('hour', name, field)
-            for i in xrange(60):
+            pl.sadd(self.set_key, key)
+            for i in xrange(self.hour_parts):
                 pl.lpush(key, 0)
             key = RedisDB.make_key('day', name, field)
-            for i in xrange(24):
+            pl.sadd(self.set_key, key)
+            for i in xrange(self.day_parts):
                 pl.lpush(key, 0)
             pl.execute()
     
     def get_all_names(self):
         key_prefix = RedisDB.make_key('min')
         names = []
-        for key in self.db.keys(key_prefix +'*'):
+        for key in self.get_keys_starts_with(key_prefix):
             name = RedisDB.split_key(key)['name']
             names += [name] if name not in names else []
         return names
@@ -68,10 +82,8 @@ class RedisDB(object):
         pl = self.db.pipeline()
         res = {}
         fields = []
-        for key in self.db.keys(key_prefix + '*'):
-            # field_name = key.split(key_prefix)[-1]
+        for key in self.get_keys_starts_with(key_prefix):
             field = RedisDB.split_key(key)['field']
-            # res.update({field: None})
             fields += [field]
             pl.lrange(key, 0, -1)
         for field, row in zip(fields, pl.execute()):
@@ -89,7 +101,7 @@ class RedisDB(object):
 
     def update_hour_table(self):
         key_prefix = RedisDB.make_key('hour')
-        for key in self.db.keys(key_prefix + '*'):
+        for key in self.get_keys_starts_with(key_prefix):
             min_key = RedisDB.split_key(key)
             min_key.update({'table': 'min'})
             min_key = RedisDB.make_key(**min_key)
@@ -99,7 +111,7 @@ class RedisDB(object):
             
     def update_day_table(self):
         key_prefix = RedisDB.make_key('day')
-        for key in self.db.keys(key_prefix + '*'):
+        for key in self.get_keys_starts_with(key_prefix):
             hour_key = RedisDB.split_key(key)
             hour_key.update({'table': 'hour'})
             per_hour = self.get_value(**hour_key)
