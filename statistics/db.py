@@ -17,14 +17,24 @@ class RedisDB(object):
     
     def add_name(self, name, fields):
         for field in fields:
+            pl = self.db.pipeline()
             key = RedisDB.make_key('min', name, field)
-            self.db.set(key, 0)
+            pl.set(key, 0)
             key = RedisDB.make_key('hour', name, field)
-            while self.db.llen(key) < 60:
-                self.db.lpush(key, 0)
+            for i in xrange(60):
+                pl.lpush(key, 0)
             key = RedisDB.make_key('day', name, field)
-            while self.db.llen(key) < 24:
-                self.db.lpush(key, 0)
+            for i in xrange(24):
+                pl.lpush(key, 0)
+            pl.execute()
+    
+    def get_all_names(self):
+        key_prefix = RedisDB.make_key('min')
+        names = []
+        for key in self.db.keys(key_prefix +'*'):
+            name = RedisDB.split_key(key)['name']
+            names += [name] if name not in names else []
+        return names
     
     @staticmethod
     def make_key(table, name='', field=''):
@@ -73,13 +83,8 @@ class RedisDB(object):
         key_prefix = RedisDB.make_key(table)
         res = []
         names = []
-        for key in self.db.keys(key_prefix + '*'):
-            name = RedisDB.split_key(key)['name']
-            # name = key.split(key_prefix)[-1]
-            # name = '.'.join(name.split('.')[:-1])
-            if name not in names:
-                names += [name]
-                res += [self.get_all_fields(table=table, name=name)]
+        for name in self.get_all_names():
+            res += [self.get_all_fields(table=table, name=name)]
         return res
 
     def update_hour_table(self):
