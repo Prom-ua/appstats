@@ -2,5 +2,5 @@
 {% import "helpers.html" as h %}
 
 {% block body %}
-    {{ h.draw_table(data=data, fields=['NAME'] + g.fields + ['REQUESTS', 'REQUESTS_PER_HOUR']) }}
+    {{ h.draw_table(data=data, fields=['NAME'] + g.fields + ['REQUESTS_PER_HOUR']) }}
 {% endblock %}
