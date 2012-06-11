@@ -6,6 +6,7 @@
                     <th> <a href="{{ url_for('main_page', sort_by=field) }}"> {{ field }} </a> </th>
                 {% endfor %}
             </tr>
+        </thead>
             <tbody>
                 {% for row in data %}
                     <tr>
@@ -15,6 +16,5 @@
                     </tr>
                 {% endfor %}
             </tbody>
-        </thead>
     </table>
 {%- endmacro %}

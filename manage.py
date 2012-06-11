@@ -1,7 +1,6 @@
 from flaskext.script import Manager
 
-from statistics import app
-from statistics.db import connect_redis_db, RedisDB
+from statistics import app, day_counter, hour_counter, min_counter, fields
 
 manager = Manager(app)
 
@@ -20,13 +19,15 @@ def periodic_requests_update():
 
 @manager.command
 def update_hour_table():
-    db = RedisDB()
-    db.update_hour_table()
+    for val in min_counter.get_vals():
+        for k in val:
+            hour_counter.update(val['NAME'], k, val[k])
 
 @manager.command
 def update_day_table():
-    db = RedisDB()
-    db.update_day_table()
+    for val in hour_counter.get_vals():
+        for k in val:
+            day_counter.update(val['NAME'], k, val[k])
 
 if __name__ == "__main__":
     manager.run()
