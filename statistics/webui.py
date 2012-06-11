@@ -38,7 +38,7 @@ def add_page():
     for field in fields:
         new_val = int(request.args.get(field, '0'))
         hour_counter.incrby_last(name, field, new_val)
-        hour_counter.update_if_need(name, field)
         day_counter.incrby_last(name, field, new_val)
-        day_counter.update_if_need(name, field)
+    hour_counter.update()
+    day_counter.update()
     return redirect("/")
