@@ -1,5 +1,5 @@
 from flask import Flask
-from statistics.db import Counter
+from statistics.counter import Counter
 import redis
 
 app = Flask(__name__)
