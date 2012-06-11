@@ -14,15 +14,16 @@ class Counter():
         for name in names:
             for field in self.fields:
                 key = "%s%s.%s.%s.%s" % (self.prefix, name, self.interval, self.part, field)
-                key_last = "%s%s.%s.%s.last.%s" % (self.prefix, name, self.interval, self.part, field)
+                key_last_val = "%s%s.%s.%s.last_val.%s" % (self.prefix, name, self.interval, self.part, field)
+                key_updated = "%s%s.%s.%s.updated.%s" % (self.prefix, name, self.interval, self.part, field)
 
                 if self.db.llen(key) == 0:
                     for i in xrange(self.interval/self.part - 1):
                         self.db.rpush(key, 0)
-                    self.db.hset(key_last, 'updated', time())
+                    self.db.set(key_updated, time())
 
-                updated = float(self.db.hget(key_last, 'updated'))
-                val = int(self.db.hget(key_last, 'val'))
+                updated = float(self.db.get(key_updated))
+                val = int(self.db.get(key_last_val))
                 passed_time = time() - updated
                 print passed_time
                 if passed_time > self.part:
@@ -32,9 +33,9 @@ class Counter():
                         self.db.lpop(key)
                         self.db.rpush(key, val_per_part)
                     val -= num_of_new_parts * val_per_part
-                    self.db.hset(key_last, 'val', val)
+                    self.db.set(key_last_val, val)
                     rest_time = passed_time - num_of_new_parts * self.part
-                    self.db.hset(key_last, 'updated', time() - rest_time)
+                    self.db.set(key_updated, time() - rest_time)
 
     def get_vals(self, names=None):
         res = []
@@ -47,8 +48,8 @@ class Counter():
             vals = {}
             for field in self.fields:
                 key = "%s%s.%s.%s.%s" % (self.prefix, name, self.interval, self.part, field)
-                key_last = "%s%s.%s.%s.last.%s" % (self.prefix, name, self.interval, self.part, field)
-                last_val = int(self.db.hget(key_last, 'val'))
+                key_last_val = "%s%s.%s.%s.last_val.%s" % (self.prefix, name, self.interval, self.part, field)
+                last_val = int(self.db.get(key_last_val))
                 vals.update(
                     {field: sum([int(count) for count in self.db.lrange(key, 0, -1)]) + last_val}
                 )
@@ -57,5 +58,11 @@ class Counter():
         return res
 
     def incrby_last(self, name, field, increment):
-        key_last = "%s%s.%s.%s.last.%s" % (self.prefix, name, self.interval, self.part, field)
-        self.db.hincrby(key_last, 'val', increment)
+        key = "%s%s.%s.%s.%s" % (self.prefix, name, self.interval, self.part, field)
+        key_last_val = "%s%s.%s.%s.last_val.%s" % (self.prefix, name, self.interval, self.part, field)
+        key_updated = "%s%s.%s.%s.updated.%s" % (self.prefix, name, self.interval, self.part, field)
+        if self.db.llen(key) == 0:
+            for i in xrange(self.interval/self.part - 1):
+                self.db.rpush(key, 0)
+            self.db.set(key_updated, time())
+        self.db.incr(key_last_val, increment)
