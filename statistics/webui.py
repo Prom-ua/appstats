@@ -1,6 +1,6 @@
 from flask import render_template, redirect, request
 
-from statistics import app, min_counter, hour_counter, day_counter, fields
+from statistics import app, hour_counter, day_counter, fields
 
 @app.route("/")
 def main_page():
@@ -33,8 +33,12 @@ def hour_aver():
 @app.route("/add/")
 def add_page():
     name = request.args.get('NAME')
+    hour_counter.incrby_last(name, "REQUESTS", 1)
+    day_counter.incrby_last(name, "REQUESTS", 1)
     for field in fields:
         new_val = int(request.args.get(field, '0'))
-        min_counter.update(name, field, new_val)
-    min_counter.update(name, "REQUESTS", 1)
+        hour_counter.incrby_last(name, field, new_val)
+        hour_counter.update_if_need(name, field)
+        day_counter.incrby_last(name, field, new_val)
+        day_counter.update_if_need(name, field)
     return redirect("/")
