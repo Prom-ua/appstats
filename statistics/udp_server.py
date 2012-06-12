@@ -1,4 +1,6 @@
-from statistics import app
+import json
+
+from statistics import app, day_counter, hour_counter
 
 class UDPServer(object):
     def __init__(self, host=None, port=None):
@@ -6,6 +8,14 @@ class UDPServer(object):
         self.port = port or app.config['UDP_PORT']
 
     def handle(self, data, address):
+        data = json.load(data)
+        name = data['NAME']
+        hour_counter.incrby(name, "REQUESTS", 1)
+        day_counter.incrby(name, "REQUESTS", 1)
+        for field in data:
+            if field != 'NAME':
+                hour_counter.incrby(name, field, int(data[field]))
+                day_counter.incrby(name, field, int(data[field]))
         print "Data: %s \n addr: %s" % (data, address)
 
     def run(self):

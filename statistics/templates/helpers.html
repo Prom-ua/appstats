@@ -2,8 +2,8 @@
     <table class="table table-bordered table-striped">
         <thead>
             <tr>
-                <th> NAME </th>
-                <th> REQUESTS </th>
+                <th> <a href="{{ url_for('main_page', sort_by_field='NAME', sort_by_period='hour') }}"> NAME </a> </th>
+                <th> <a href="{{ url_for('main_page', sort_by_field='REQUESTS', sort_by_period='hour') }}"> REQUESTS </a> </th>
                 {% for field in fields %}
                     {%if field != "REQUESTS" %}
                         <th COLSPAN=3> {{ field }} </th>
