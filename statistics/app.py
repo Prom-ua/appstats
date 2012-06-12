@@ -45,9 +45,9 @@ def main_page():
 @app.route('/add/')
 def add_page():
     name = request.args.get('NAME')
-    # if not request.args.get('REQUESTS'):
-    hour_counter.incrby(name, 'REQUESTS', 1)
-    day_counter.incrby(name, 'REQUESTS', 1)
+    if not request.args.get('REQUESTS'):
+        hour_counter.incrby(name, 'REQUESTS', 1)
+        day_counter.incrby(name, 'REQUESTS', 1)
     for field in request.args:
         if field != 'NAME':
             new_val = request.args.get(field, 0, int)
