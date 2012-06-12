@@ -2,26 +2,26 @@ from time import time
 
 
 class Counter(object):
-    last_val_tpl = "%(prefix)s.%(name)s.%(interval)s.%(part)s.%(field)s"
+    last_val_key_format = '%(prefix)s,%(name)s,%(interval)s,%(part)s,last_val,%(field)s'
+    updated_key_format = '%(prefix)s,%(name)s,%(interval)s,%(part)s,updated,%(field)s'
+    key_format = '%(prefix)s,%(name)s,%(interval)s,%(part)s,%(field)s'
 
     def __init__(self, db, app, interval=3600, part=60):
         self.db = db
         self.prefix = app.config['REDIS_KEYS_PREFIX']
         self.interval = interval
         self.part = part
-        self.fields = ["REQUESTS"]
-        for key in self.db.keys("%s*.*.*.last_val.*" % (self.prefix)):
-            field = key.split('.')[-1]
-            if field not in self.fields:
-                self.fields += [field]
+        self.fields = app.config['FIELDS']
+
+    def _make_key(self, key_format, **kwargs):
+        kwargs.update(prefix=self.prefix, interval=self.interval, part=self.part)
+        return key_format % kwargs
 
     def _get_names(self):
         names = []
-        for key in self.db.keys("%s.*.%s.%s.last_val.%s" % (
-            self.prefix, self.interval, self.part, self.fields[0]
-        )):
-            # Example key format: statistics.path.to.module:Class.method.3600.60.last_val.REQUESTS
-            prefix, name, interval, part, suffix, field = key.split('.')
+        for key in self.db.keys(self._make_key(self.last_val_key_format, name='*', field=self.fields[0])):
+            # Example key format: statistics,path.to.module:Class.method,3600,60,last_val,REQUESTS
+            prefix, name, interval, part, suffix, field = key.split(',')
             names.append(name)
         return names
 
@@ -29,15 +29,9 @@ class Counter(object):
         names = self._get_names()
         for name in names:
             for field in self.fields:
-                key = "%s.%s.%s.%s.%s" % (
-                    self.prefix, name, self.interval, self.part, field
-                )
-                key_last_val = "%s.%s.%s.%s.last_val.%s" % (
-                    self.prefix, name, self.interval, self.part, field
-                )
-                key_updated = "%s.%s.%s.%s.updated.%s" % (
-                    self.prefix, name, self.interval, self.part, field
-                )
+                key = self._make_key(self.key_format, name=name, field=field)
+                key_last_val = self._make_key(self.last_val_key_format, name=name, field=field)
+                key_updated = self._make_key(self.updated_key_format, name=name, field=field)
 
                 if self.db.llen(key) == 0:
                     for i in xrange(self.interval / self.part - 1):
@@ -70,29 +64,19 @@ class Counter(object):
         for name in names:
             vals = {}
             for field in self.fields:
-                key = "%s.%s.%s.%s.%s" % (
-                    self.prefix, name, self.interval, self.part, field
-                )
-                key_last_val = "%s.%s.%s.%s.last_val.%s" % (
-                    self.prefix, name, self.interval, self.part, field
-                )
+                key = self._make_key(self.key_format, name=name, field=field)
+                key_last_val = self._make_key(self.last_val_key_format, name=name, field=field)
                 last_val = int(self.db.get(key_last_val) or '0')
                 vals.update({
                     field: sum(int(count) for count in self.db.lrange(key, 0, -1)) + last_val
                 })
             vals.update({'NAME': name})
-            res += [vals]
+            res.append(vals)
         return res
 
     def incrby(self, name, field, increment):
-        if field not in self.fields:
-            self.fields += [field]
-        key_last_val = "%s.%s.%s.%s.last_val.%s" % (
-            self.prefix, name, self.interval, self.part, field
-        )
-        key_updated = "%s.%s.%s.%s.updated.%s" % (
-            self.prefix, name, self.interval, self.part, field
-        )
+        key_last_val = self._make_key(self.last_val_key_format, name=name, field=field)
+        key_updated = self._make_key(self.updated_key_format, name=name, field=field)
         if not self.db.get(key_updated):
             self.db.set(key_updated, time())
         self.db.incr(key_last_val, increment)
