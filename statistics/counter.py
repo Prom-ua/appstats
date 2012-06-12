@@ -75,6 +75,8 @@ class Counter(object):
         return res
 
     def incrby(self, name, field, increment):
+        if ',' in name:
+            raise Exception("Name can't contain ',' (comma)")
         key_last_val = self._make_key(self.last_val_key_format, name=name, field=field)
         key_updated = self._make_key(self.updated_key_format, name=name, field=field)
         if not self.db.get(key_updated):
