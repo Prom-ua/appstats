@@ -4,30 +4,29 @@ from statistics import app, hour_counter, day_counter
 
 @app.route("/")
 def main_page():
-    data = hour_counter.get_vals()
-    sort_by = request.args.get('sort_by', None)
-    if sort_by:
-        data = sorted(data, key=lambda row: row[sort_by])
-    return render_template("main_page.html", data=data, fields=hour_counter.fields)
-
-@app.route("/day_aver/")
-def day_aver():
-    data = day_counter.get_vals()
-    for row in data:
-        req_count = row['REQUESTS']
-        for k in row:
-            if k in day_counter.fields and k != "REQUESTS":
-                row[k] = float(row[k])/req_count
-    return render_template("main_page.html", data=data, fields=day_counter.fields)
-
-@app.route("/hour_aver/")
-def hour_aver():
-    data = hour_counter.get_vals()
-    for row in data:
+    hour_data = hour_counter.get_vals()
+    day_aver_data = day_counter.get_vals()
+    hour_aver_data = hour_counter.get_vals()
+    for row in hour_aver_data:
         req_count = row['REQUESTS']
         for k in row:
             if k in hour_counter.fields and k != "REQUESTS":
-                row[k] = float(row[k])/req_count
+                row[k] = round(float(row[k])/req_count, 2)
+    for row in day_aver_data:
+        req_count = row['REQUESTS']
+        for k in row:
+            if k in hour_counter.fields and k != "REQUESTS":
+                row[k] = round(float(row[k])/req_count, 2)
+    data = []
+    for h_row in hour_data:
+        for h_aver_row in hour_aver_data:
+            for d_aver_row in day_aver_data:
+                if h_row['NAME'] == h_aver_row['NAME'] == d_aver_row['NAME']:
+                    data += [dict(hour=h_row, hour_aver=h_aver_row, day_aver=d_aver_row)]
+    sort_by_field = request.args.get('sort_by_field', None)
+    sort_by_period = request.args.get('sort_by_period', None)
+    if sort_by_field and sort_by_period:
+        data = sorted(data, key=lambda row: row[sort_by_period][sort_by_field], reverse=True)
     return render_template("main_page.html", data=data, fields=hour_counter.fields)
 
 @app.route("/add/")

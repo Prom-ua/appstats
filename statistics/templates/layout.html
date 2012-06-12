@@ -6,21 +6,6 @@
         <link rel=stylesheet type=text/css href="{{ url_for('static', filename='css/bootstrap.css') }}">
     </head>
     <body>
-        <!--<div class="navbar navbar-fixed-top">-->
-        <!--        <div class=navbar-inner>-->
-        <!--            <div class=container>-->
-        <!--                <a class="brand" href="#"> Statistics </a>-->
-        <!--                <div class="nav-collapse collapse">-->
-        <!--                    <ul class=nav>-->
-        <!--                        <li><a href="{{ url_for('main_page') }}"> Day total </a>-->
-        <!--                        <li><a href="{{ url_for('day_aver') }}"> Day average </a>-->
-        <!--                        <li><a href="{{ url_for('hour_aver') }}"> Hour average </a>-->
-        <!--                    </ul>-->
-        <!--                </div>-->
-        <!--            </div>-->
-        <!--        </div>-->
-        <!--</div>-->
-
         <div class=container>
             {% block body %}{% endblock %}
         </div>

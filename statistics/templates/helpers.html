@@ -2,16 +2,37 @@
     <table class="table table-bordered table-striped">
         <thead>
             <tr>
+                <th> NAME </th>
+                <th> REQUESTS </th>
                 {% for field in fields %}
-                    <th> <a href="{{ url_for('main_page', sort_by=field) }}"> {{ field }} </a> </th>
+                    {%if field != "REQUESTS" %}
+                        <th COLSPAN=3> {{ field }} </th>
+                    {% endif %}
                 {% endfor %}
             </tr>
         </thead>
+            <tr>
+                <td> </td>
+                <td> </td>
+                {% for field in fields %}
+                    {%if field != "REQUESTS" %}
+                        <td> <a href="{{ url_for('main_page', sort_by_field=field, sort_by_period='hour') }}"> H </a> </td>
+                        <td> <a href="{{ url_for('main_page', sort_by_field=field, sort_by_period='hour_aver') }}"> &ltH&gt </a> </td>
+                        <td> <a href="{{ url_for('main_page', sort_by_field=field, sort_by_period='hour_aver') }}"> &ltD&gt </a> </td>
+                    {% endif %}
+                {% endfor %}
+            </tr>
             <tbody>
                 {% for row in data %}
                     <tr>
+                        <td> {{ row['hour']['NAME'] }} </td>     
+                        <td> {{ row['hour']['REQUESTS'] }} </td>     
                         {% for field in fields %}
-                            <td> {{ row[field] }} </td>     
+                            {%if field != "REQUESTS" %}
+                                <td> {{ row['hour'][field] }} </td>     
+                                <td> {{ row['hour_aver'][field] }} </td>     
+                                <td> {{ row['day_aver'][field] }} </td>     
+                            {% endif %}
                         {% endfor %}
                     </tr>
                 {% endfor %}
