@@ -2,5 +2,5 @@
 {% import "helpers.html" as h %}
 
 {% block body %}
-    {{ h.draw_table(data=data, fields=fields) }}
+    {{ h.draw_table(data=data, fields=fields, sort_by_field=sort_by_field, sort_by_period=sort_by_period) }}
 {% endblock %}

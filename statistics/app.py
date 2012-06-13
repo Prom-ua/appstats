@@ -5,6 +5,7 @@ import redis
 from flask import Flask, render_template, redirect, request
 
 from .counter import Counter
+from .utils import add_data
 
 
 app = Flask(__name__)
@@ -12,6 +13,7 @@ app.config.from_object('config')
 db = redis.Redis(host=app.config['REDIS_HOST'], port=app.config['REDIS_PORT'])
 hour_counter = Counter(db=db, app=app)
 day_counter = Counter(interval=86400, part=3600, db=db, app=app)
+counters = [hour_counter, day_counter]
 
 
 @app.route('/')
@@ -41,23 +43,22 @@ def main_page():
     sort_by_period = request.args.get('sort_by_period', None)
     if sort_by_field and sort_by_period:
         data = sorted(data, key=lambda row: row[sort_by_period][sort_by_field], reverse=True)
-    return render_template('main_page.html', data=data, fields=hour_counter.fields)
+    return render_template(
+        'main_page.html',
+        data=data,
+        fields=hour_counter.fields,
+        sort_by_field=sort_by_field,
+        sort_by_period=sort_by_period
+        )
 
 
 @app.route('/add/')
 def add_page():
-    name = request.args.get('NAME')
-    if not request.args.get('REQUESTS'):
-        hour_counter.incrby(name, 'REQUESTS', 1)
-        day_counter.incrby(name, 'REQUESTS', 1)
-    for field in request.args:
+    data = request.args.to_dict()
+    for field in data:
         if field != 'NAME':
-            new_val = request.args.get(field, 0, int)
-            hour_counter.incrby(name, field, new_val)
-    for field in request.args:
-        if field != 'NAME':
-            new_val = request.args.get(field, 0, int)
-            day_counter.incrby(name, field, new_val)
+            data[field] = int(data[field])
+    add_data(data, counters)
     hour_counter.update()
     day_counter.update()
     return redirect('/')
