@@ -20,16 +20,24 @@ counters = [hour_counter, day_counter]
 def main_page():
     hour_data = hour_counter.get_vals()
     day_aver_data = day_counter.get_vals()
-    hour_aver_data = hour_counter.get_vals()
-    for row in hour_aver_data:
+    hour_aver_data = []
+    for row in hour_data:
         req_count = row['REQUESTS']
+        h_aver_row = {}
         for k in row:
-            if k in hour_counter.fields and k != 'REQUESTS':
-                row[k] = round(float(row[k])/req_count, 2)
+            if k == 'NAME':
+                h_aver_row.update({k: row[k]})
+            elif k == 'REQUESTS':
+                h_aver_row.update({k: round(float(row[k])/hour_counter.interval, 2)})
+            elif k in hour_counter.fields:
+                h_aver_row.update({k: round(float(row[k])/req_count, 2)})
+        hour_aver_data.append(h_aver_row)
     for row in day_aver_data:
         req_count = row['REQUESTS']
         for k in row:
-            if k in hour_counter.fields and k != 'REQUESTS':
+            if  k == 'REQUESTS':
+                row[k] = round(float(row[k])/day_counter.interval, 2)
+            elif k in hour_counter.fields:
                 row[k] = round(float(row[k])/req_count, 2)
     data = []
     for h_row in hour_data:
