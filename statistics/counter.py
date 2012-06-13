@@ -22,12 +22,13 @@ class Counter(object):
     def _get_names(self):
         names = []
         search_key = self._make_key(self.last_val_key_format, name='*',
-                                    field=self.fields[0])
+                                    field='*')
         for key in self.db.keys(search_key):
             # Example key format:
             # statistics,path.to.module:Class.method,3600,60,last_val,REQUESTS
             prefix, name, interval, part, suffix, field = key.split(',')
-            names.append(name)
+            if name not in names:
+                names.append(name)
         return names
 
     def update(self):
@@ -35,14 +36,18 @@ class Counter(object):
         for name in names:
             for field in self.fields:
                 key = self._make_key(self.key_format, name=name, field=field)
-                key_last_val = self._make_key(
-                    self.last_val_key_format, name=name, field=field
-                )
+                key_last_val = self._make_key(self.last_val_key_format,
+                                              name=name, field=field)
                 key_updated = self._make_key(self.updated_key_format,
                                              name=name, field=field)
 
+                if self.db.llen(key) == 0:
+                    for i in xrange(self.interval / self.part - 1):
+                        self.db.rpush(key, 0)
+                    self.db.set(key_updated, time())
+
                 updated = float(self.db.get(key_updated))
-                last_val = int(self.db.get(key_last_val))
+                last_val = int(self.db.get(key_last_val) or '0')
                 passed_time = time() - updated
 
                 # Check whether it is need to be updated
@@ -90,22 +95,6 @@ class Counter(object):
 
         if field not in self.fields:
             raise Exception("No such field")
-
-        if name not in self._get_names():
-            # new name => initializing database
-            for counter_field in self.fields:
-                key = self._make_key(self.key_format, name=name,
-                                     field=counter_field)
-                key_last_val = self._make_key(self.last_val_key_format,
-                                              name=name, field=counter_field)
-                key_updated = self._make_key(self.updated_key_format,
-                                             name=name, field=counter_field)
-
-                for i in xrange(self.interval / self.part - 1):
-                    self.db.rpush(key, 0)
-
-                self.db.set(key_updated, time())
-                self.db.set(key_last_val, 0)
 
         key_last_val = self._make_key(self.last_val_key_format, name=name,
                                       field=field)
