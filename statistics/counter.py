@@ -21,7 +21,10 @@ class Counter(object):
 
     def _get_names(self):
         names = []
-        for key in self.db.keys(self._make_key(self.last_val_key_format, name='*', field=self.fields[0])):
+        search_key = self._make_key(
+            self.last_val_key_format, name='*', field=self.fields[0]
+        )
+        for key in self.db.keys(search_key):
             # Example key format: statistics,path.to.module:Class.method,3600,60,last_val,REQUESTS
             prefix, name, interval, part, suffix, field = key.split(',')
             names.append(name)
@@ -32,8 +35,12 @@ class Counter(object):
         for name in names:
             for field in self.fields:
                 key = self._make_key(self.key_format, name=name, field=field)
-                key_last_val = self._make_key(self.last_val_key_format, name=name, field=field)
-                key_updated = self._make_key(self.updated_key_format, name=name, field=field)
+                key_last_val = self._make_key(
+                    self.last_val_key_format, name=name, field=field
+                )
+                key_updated = self._make_key(
+                    self.updated_key_format, name=name, field=field
+                )
 
                 updated = float(self.db.get(key_updated))
                 last_val = int(self.db.get(key_last_val))
@@ -60,10 +67,16 @@ class Counter(object):
             vals = {}
             for field in self.fields:
                 key = self._make_key(self.key_format, name=name, field=field)
-                key_last_val = self._make_key(self.last_val_key_format, name=name, field=field)
+                key_last_val = self._make_key(
+                    self.last_val_key_format, name=name, field=field
+                )
                 last_val = int(self.db.get(key_last_val) or '0')
                 vals.update({
-                    field: reduce(lambda acc, val: acc + int(val), self.db.lrange(key, 0, -1), last_val)
+                    field: reduce(
+                        lambda acc, val: acc + int(val),
+                        self.db.lrange(key, 0, -1),
+                        last_val
+                    )
                 })
             vals.update({'NAME': name})
             res.append(vals)
@@ -76,12 +89,20 @@ class Counter(object):
             raise Exception("No such field")
         if name not in self._get_names():
             for counter_field in self.fields:
-                key = self._make_key(self.key_format, name=name, field=counter_field)
-                key_last_val = self._make_key(self.last_val_key_format, name=name, field=counter_field)
-                key_updated = self._make_key(self.updated_key_format, name=name, field=counter_field)
+                key = self._make_key(
+                    self.key_format, name=name, field=counter_field
+                )
+                key_last_val = self._make_key(
+                    self.last_val_key_format, name=name, field=counter_field
+                )
+                key_updated = self._make_key(
+                    self.updated_key_format, name=name, field=counter_field
+                )
                 for i in xrange(self.interval / self.part - 1):
                     self.db.rpush(key, 0)
                 self.db.set(key_updated, time())
                 self.db.set(key_last_val, 0)
-        key_last_val = self._make_key(self.last_val_key_format, name=name, field=field)
+        key_last_val = self._make_key(
+            self.last_val_key_format, name=name, field=field
+        )
         self.db.incr(key_last_val, increment)

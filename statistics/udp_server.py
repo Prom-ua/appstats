@@ -16,7 +16,6 @@ class UDPServer(object):
         decoder = json.JSONDecoder()
         data = decoder.decode(data)
         add_data(data, counters)
-        print "Data: %s \n addr: %s" % (data, address)
 
     def run(self):
         try:
