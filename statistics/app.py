@@ -51,11 +51,10 @@ def main_page():
                         hour=h_row, hour_aver=h_aver_row, day_aver=d_aver_row
                     ))
 
-    sort_by_field = request.args.get('sort_by_field', None)
-    sort_by_period = request.args.get('sort_by_period', None)
-    if sort_by_field and sort_by_period:
-        get_sorting_key = lambda row: row[sort_by_period][sort_by_field]
-        data = sorted(data, key=get_sorting_key, reverse=True)
+    sort_by_field = request.args.get('sort_by_field', 'REQUESTS')
+    sort_by_period = request.args.get('sort_by_period', 'hour')
+    get_sorting_key = lambda row: row[sort_by_period][sort_by_field]
+    data = sorted(data, key=get_sorting_key, reverse=True)
     return render_template(
         'main_page.html',
         data=data,

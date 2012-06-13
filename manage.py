@@ -1,5 +1,7 @@
 # encoding: utf-8
 
+import daemon
+
 from flaskext.script import Manager
 
 from statistics.app import app, hour_counter, day_counter
@@ -15,8 +17,12 @@ def update():
 
 @manager.command
 def run_udp_server():
-    udp_server = UDPServer(host=app.config['UDP_HOST'], port=app.config['UDP_PORT'])
-    udp_server.run()
+    udp_server = UDPServer(
+        host=app.config['UDP_HOST'],
+        port=app.config['UDP_PORT']
+    )
+    with daemon.DaemonContext():
+        udp_server.run()
 
 if __name__ == '__main__':
     manager.run()
