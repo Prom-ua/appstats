@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 import redis
 
 from flask import Flask, render_template, redirect, request

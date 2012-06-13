@@ -1,8 +1,12 @@
+# encoding: utf-8
+
 import json
 
 from statistics import app, day_counter, hour_counter
 
+
 class UDPServer(object):
+
     def __init__(self, host=None, port=None):
         self.host = host or app.config['UDP_HOST']
         self.port = port or app.config['UDP_PORT']

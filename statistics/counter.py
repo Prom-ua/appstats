@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 from time import time
 
 
@@ -68,7 +70,8 @@ class Counter(object):
                 key_last_val = self._make_key(self.last_val_key_format, name=name, field=field)
                 last_val = int(self.db.get(key_last_val) or '0')
                 vals.update({
-                    field: sum(int(count) for count in self.db.lrange(key, 0, -1)) + last_val
+                    # field: sum(int(count) for count in self.db.lrange(key, 0, -1)) + last_val
+                    field: reduce(lambda acc, val: acc + int(val), self.db.lrange(key, 0, -1), last_val)
                 })
             vals.update({'NAME': name})
             res.append(vals)

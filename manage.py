@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 from flaskext.script import Manager
 
 from statistics.app import app, hour_counter, day_counter
