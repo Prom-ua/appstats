@@ -7,5 +7,5 @@ encoder = json.JSONEncoder()
 data = encoder.encode(data)
 port = 9001
 hostname = '127.0.0.1'
-udp = socket(AF_INET,SOCK_DGRAM)
+udp = socket(AF_INET, SOCK_DGRAM)
 udp.sendto(data, (hostname, port))

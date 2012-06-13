@@ -1,5 +1,6 @@
 # encoding: utf-8
 
+
 def add_data(data, counters):
     print data
     name = data['NAME']

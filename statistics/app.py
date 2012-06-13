@@ -27,49 +27,48 @@ def main_page():
         h_aver_row = {}
         for k in row:
             if k == 'NAME':
-                h_aver_row.update({k: row[k]})
+                h_aver_row[k] = row[k]
             elif k == 'REQUESTS':
-                h_aver_row.update({k: round(float(row[k])/hour_counter.interval, 2)})
+                h_aver_row[k] = round(float(row[k]) / hour_counter.interval, 2)
             elif k in hour_counter.fields:
-                h_aver_row.update({k: round(float(row[k])/req_count, 2)})
+                h_aver_row[k] = round(float(row[k]) / req_count, 2)
         hour_aver_data.append(h_aver_row)
 
     for row in day_aver_data:
         req_count = row['REQUESTS']
         for k in row:
             if  k == 'REQUESTS':
-                row[k] = round(float(row[k])/day_counter.interval, 2)
+                row[k] = round(float(row[k]) / day_counter.interval, 2)
             elif k in hour_counter.fields:
-                row[k] = round(float(row[k])/req_count, 2)
+                row[k] = round(float(row[k]) / req_count, 2)
 
     data = []
     for h_row in hour_data:
         for h_aver_row in hour_aver_data:
             for d_aver_row in day_aver_data:
                 if h_row['NAME'] == h_aver_row['NAME'] == d_aver_row['NAME']:
-                    data.append(dict(
-                        hour=h_row, hour_aver=h_aver_row, day_aver=d_aver_row
-                    ))
+                    data.append(dict(hour=h_row, hour_aver=h_aver_row,
+                                     day_aver=d_aver_row))
 
     sort_by_field = request.args.get('sort_by_field', 'REQUESTS')
     sort_by_period = request.args.get('sort_by_period', 'hour')
     get_sorting_key = lambda row: row[sort_by_period][sort_by_field]
     data = sorted(data, key=get_sorting_key, reverse=True)
-    return render_template(
-        'main_page.html',
-        data=data,
-        fields=hour_counter.fields,
-        sort_by_field=sort_by_field,
-        sort_by_period=sort_by_period
-        )
+
+    return render_template('main_page.html', data=data,
+                           fields=hour_counter.fields,
+                           sort_by_field=sort_by_field,
+                           sort_by_period=sort_by_period)
 
 
 @app.route('/add/')
 def add_page():
     data = request.args.to_dict()
+
     for field in data:
         if field != 'NAME':
             data[field] = int(data[field])
+
     add_data(data, counters)
     hour_counter.update()
     day_counter.update()

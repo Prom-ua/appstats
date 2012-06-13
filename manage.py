@@ -10,10 +10,12 @@ from statistics.udp_server import UDPServer
 
 manager = Manager(app)
 
+
 @manager.command
 def update():
     hour_counter.update()
     day_counter.update()
+
 
 @manager.command
 def run_udp_server():
@@ -23,6 +25,7 @@ def run_udp_server():
     )
     with daemon.DaemonContext():
         udp_server.run()
+
 
 if __name__ == '__main__':
     manager.run()
