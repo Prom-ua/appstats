@@ -5,7 +5,6 @@ import redis
 from flask import Flask, render_template, redirect, request
 
 from .counter import Counter
-from .utils import add_data
 
 
 app = Flask(__name__)
@@ -14,6 +13,18 @@ db = redis.Redis(host=app.config['REDIS_HOST'], port=app.config['REDIS_PORT'])
 hour_counter = Counter(db=db, app=app)
 day_counter = Counter(interval=86400, part=3600, db=db, app=app)
 counters = [hour_counter, day_counter]
+
+
+def add_data(data):
+    print data
+    name = data['NAME']
+    if not 'REQUESTS' in data:
+        for counter in counters:
+            counter.incrby(name, "REQUESTS", 1)
+    for field in data:
+        for counter in counters:
+            if field != 'NAME':
+                counter.incrby(name, field, data[field])
 
 
 @app.route('/')
@@ -69,7 +80,7 @@ def add_page():
         if field != 'NAME':
             data[field] = int(data[field])
 
-    add_data(data, counters)
+    add_data(data)
     hour_counter.update()
     day_counter.update()
     return redirect('/')

@@ -4,8 +4,7 @@ import json
 import eventlet
 from eventlet.green import socket
 
-from .app import counters
-from .utils import add_data
+from .app import add_data
 
 
 class UDPServer(object):
@@ -17,7 +16,7 @@ class UDPServer(object):
     def handle(self, data, address):
         decoder = json.JSONDecoder()
         data = decoder.decode(data)
-        add_data(data, counters)
+        add_data(data)
 
     def run(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
