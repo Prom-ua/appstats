@@ -35,13 +35,6 @@ class Counter(object):
                 key_last_val = self._make_key(self.last_val_key_format, name=name, field=field)
                 key_updated = self._make_key(self.updated_key_format, name=name, field=field)
 
-                if self.db.llen(key) == 0:
-                    for i in xrange(self.interval / self.part - 1):
-                        self.db.rpush(key, 0)
-                    self.db.set(key_updated, time())
-                if not self.db.get(key_last_val):
-                    self.db.set(key_last_val, 0)
-
                 updated = float(self.db.get(key_updated))
                 last_val = int(self.db.get(key_last_val))
                 passed_time = time() - updated
@@ -70,7 +63,6 @@ class Counter(object):
                 key_last_val = self._make_key(self.last_val_key_format, name=name, field=field)
                 last_val = int(self.db.get(key_last_val) or '0')
                 vals.update({
-                    # field: sum(int(count) for count in self.db.lrange(key, 0, -1)) + last_val
                     field: reduce(lambda acc, val: acc + int(val), self.db.lrange(key, 0, -1), last_val)
                 })
             vals.update({'NAME': name})
@@ -80,8 +72,16 @@ class Counter(object):
     def incrby(self, name, field, increment):
         if ',' in name:
             raise Exception("Name can't contain ',' (comma)")
+        if field not in self.fields:
+            raise Exception("No such field")
+        if name not in self._get_names():
+            for counter_field in self.fields:
+                key = self._make_key(self.key_format, name=name, field=counter_field)
+                key_last_val = self._make_key(self.last_val_key_format, name=name, field=counter_field)
+                key_updated = self._make_key(self.updated_key_format, name=name, field=counter_field)
+                for i in xrange(self.interval / self.part - 1):
+                    self.db.rpush(key, 0)
+                self.db.set(key_updated, time())
+                self.db.set(key_last_val, 0)
         key_last_val = self._make_key(self.last_val_key_format, name=name, field=field)
-        key_updated = self._make_key(self.updated_key_format, name=name, field=field)
-        if not self.db.get(key_updated):
-            self.db.set(key_updated, time())
         self.db.incr(key_last_val, increment)
