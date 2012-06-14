@@ -16,7 +16,6 @@ counters = [hour_counter, day_counter]
 
 
 def add_data(data):
-    print data
     name = data['NAME']
     if not 'REQUESTS' in data:
         for counter in counters:
