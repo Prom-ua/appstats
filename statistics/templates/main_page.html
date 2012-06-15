@@ -9,9 +9,21 @@
     <body>
         <div class=container>
             <p class=pull-right>
-                <a href="{{ url_for('main_page', sort_by_field=sort_by_field, sort_by_period=sort_by_period, number_of_lines=20) }}"> [20] </a>
-                <a href="{{ url_for('main_page', sort_by_field=sort_by_field, sort_by_period=sort_by_period, number_of_lines=50) }}"> [50] </a>
-                <a href="{{ url_for('main_page', sort_by_field=sort_by_field, sort_by_period=sort_by_period, number_of_lines=100)}}"> [100] </a>
+                {% if number_of_lines != 20 %}
+                    <a href="{{ url_for('main_page', sort_by_field=sort_by_field, sort_by_period=sort_by_period, number_of_lines=20) }}"> [20] </a>
+                {% else %}
+                    [20]
+                {% endif %}
+                {% if number_of_lines != 50 %}
+                    <a href="{{ url_for('main_page', sort_by_field=sort_by_field, sort_by_period=sort_by_period, number_of_lines=50) }}"> [50] </a>
+                {% else %}
+                    [50]
+                {% endif %}
+                {% if number_of_lines != 100 %}
+                    <a href="{{ url_for('main_page', sort_by_field=sort_by_field, sort_by_period=sort_by_period, number_of_lines=100)}}"> [100] </a>
+                {% else %}
+                    [100]
+                {% endif %}
             </p>
             {% block body %}
                 {{ h.draw_table(data=data, fields=fields, sort_by_field=sort_by_field, sort_by_period=sort_by_period) }}

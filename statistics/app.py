@@ -71,7 +71,8 @@ def main_page():
     return render_template('main_page.html', data=data,
                            fields=hour_counter.fields,
                            sort_by_field=sort_by_field,
-                           sort_by_period=sort_by_period)
+                           sort_by_period=sort_by_period,
+                           number_of_lines=number_of_lines)
 
 
 @app.route('/add/', methods=['POST'])
