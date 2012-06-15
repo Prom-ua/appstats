@@ -59,6 +59,7 @@ def main_page():
 
     sort_by_field = request.args.get('sort_by_field', 'NUMBER')
     sort_by_period = request.args.get('sort_by_period', 'hour')
+    number_of_lines = request.args.get('number_of_lines', 20, int)
     if sort_by_field == 'NAME':
         get_sorting_key = lambda tpl: tpl[0]
     else:
