@@ -68,24 +68,23 @@ class Counter(object):
                     self.db.set(key_updated, time() - rest_time)
 
     def get_vals(self, names=None):
-        res = []
+        res = {}
 
         if not names:
             names = self._get_names()
 
         for name in names:
-            vals = {}
+            counts = {}
             for field in self.fields:
                 key = self._make_key(self.key_format, name=name, field=field)
                 key_last_val = self._make_key(self.last_val_key_format,
                                               name=name, field=field)
 
                 last_val = int(self.db.get(key_last_val) or '0')
-                val = sum(map(int, self.db.lrange(key, 0, -1)))
-                val += last_val
-                vals[field] = val
-            vals['NAME'] = name
-            res.append(vals)
+                count = sum(map(int, self.db.lrange(key, 0, -1)))
+                count += last_val
+                counts[field] = count
+            res[name] = counts
 
         return res
 

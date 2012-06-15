@@ -1,60 +1,73 @@
 # encoding: utf-8
 
-from json import JSONEncoder
-from httplib import HTTPConnection
+import json
+import requests
 from time import time
-from socket import socket, AF_INET, SOCK_DGRAM
-from urllib import urlencode
+from socket import socket, AF_INET, SOCK_DGRAM, error as socket_error
 from urlparse import urlparse
 
 
 class Client(object):
+    count_limit = 100
+    desired_interval = 600
 
-    def __init__(self, dsn, fields):
+    def __init__(self, dsn):
         urlparts = urlparse(dsn)
         self.scheme = urlparts.scheme
-        self.host, self.port = urlparts.netloc.split(':')
-        self.port = int(self.port)
-        self.path = urlparts.path
-        self.fields = fields
-        self.acc = {}
-        self.last_sent = time()
-        self.req_count = 0
+        if self.scheme == 'udp':
+            self.host = urlparts.hostname
+            self.port = urlparts.port
+        elif self.scheme == 'http':
+            self.url = dsn
+        else:
+            raise Exception("Invalid scheme in dsn.")
+        self._acc = {}
+        self._last_sent = time()
+        self._req_count = 0
 
     def add_data(self, data):
-        if data['NAME'] not in self.acc:
-            self.acc[data['NAME']] = data.copy()
-            self.acc[data['NAME']]['REQUESTS'] = 1
-        else:
-            acc_data = self.acc[data['NAME']]
-            for field in data:
-                if field != 'NAME':
-                    acc_data[field] += data[field]
-            acc_data['REQUESTS'] += 1
-        self.req_count += 1
-        if (time() - self.last_sent) > 600 or self.req_count > 100:
+        for name, counts in data.iteritems():
+            if name not in self._acc:
+                self._acc[name] = counts.copy()
+                self._acc[name]['REQUESTS'] = 1
+            else:
+                for field in counts:
+                    if field in self._acc[name]:
+                        self._acc[name][field] += counts[field]
+                    else:
+                        self._acc[name][field] = counts[field]
+                self._acc[name]['REQUESTS'] += 1
+            self._req_count += 1
+        if ((time() - self._last_sent) > self.desired_interval
+            or self._req_count > self.count_limit
+        ):
             self.send_data()
-            self.last_sent = time()
-            self.req_count = 0
-            self.acc = {}
 
     def send_data(self):
         if self.scheme == 'udp':
             self._send_udp()
         elif self.scheme == 'http':
             self._send_http()
-        else:
-            raise Exception("Invalid scheme in dsn.")
+        self._last_sent = time()
+        self._req_count = 0
+        self._acc = {}
 
     def _send_udp(self):
-        encoder = JSONEncoder()
-        for data in self.acc.values():
-            json_data = encoder.encode(data)
-            udp = socket(AF_INET, SOCK_DGRAM)
-            udp.sendto(json_data, (self.host, self.port))
+        udp_socket = None
+        try:
+            udp_socket = socket(AF_INET, SOCK_DGRAM)
+            udp_socket.setblocking(False)
+            json_data = json.dumps(self._acc)
+            udp_socket.sendto(json_data, (self.host, self.port))
+        except socket_error:
+            pass
+        finally:
+            # Always close up the socket when we're done
+            if udp_socket is not None:
+                udp_socket.close()
+                udp_socket = None
 
     def _send_http(self):
-        for data in self.acc.values():
-            get_params = urlencode(data)
-            conn = HTTPConnection(host=self.host, port=self.port)
-            conn.request('GET', self.path + '?' + get_params)
+        with requests.session() as s:
+            headers = {'content-type': 'application/json'}
+            s.post(self.url, data=json.dumps(self._acc), headers=headers)

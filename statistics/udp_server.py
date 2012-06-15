@@ -14,8 +14,7 @@ class UDPServer(object):
         self.port = port
 
     def handle(self, data, address):
-        decoder = json.JSONDecoder()
-        data = decoder.decode(data)
+        data = json.loads(data)
         add_data(data)
 
     def run(self):

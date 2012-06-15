@@ -35,9 +35,9 @@
                 {% endfor %}
             </tr>
             <tbody>
-                {% for row in data %}
+                {% for name, row in data %}
                     <tr>
-                        <td> {{ row['hour']['NAME'] }} </td>     
+                        <td> {{ name }} </td>     
                         {% for field in fields %}
                                 <td></td>
                                 <td> {{ row['hour'][field] }} </td>     
