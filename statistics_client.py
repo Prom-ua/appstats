@@ -2,6 +2,7 @@
 
 import json
 import requests
+import threading
 from time import time
 from socket import socket, AF_INET, SOCK_DGRAM, error as socket_error
 from urlparse import urlparse
@@ -26,22 +27,24 @@ class Client(object):
         self._req_count = 0
 
     def add_data(self, data):
-        for name, counts in data.iteritems():
-            if name not in self._acc:
-                self._acc[name] = counts.copy()
-                self._acc[name]['NUMBER'] = 1
-            else:
-                for field in counts:
-                    if field in self._acc[name]:
-                        self._acc[name][field] += counts[field]
-                    else:
-                        self._acc[name][field] = counts[field]
-                self._acc[name]['NUMBER'] += 1
-            self._req_count += 1
-        if ((time() - self._last_sent) > self.desired_interval
-            or self._req_count > self.count_limit
-        ):
-            self.send_data()
+        lock = threading.Lock()
+        with lock:
+            for name, counts in data.iteritems():
+                if name not in self._acc:
+                    self._acc[name] = counts.copy()
+                    self._acc[name]['NUMBER'] = 1
+                else:
+                    for field in counts:
+                        if field in self._acc[name]:
+                            self._acc[name][field] += counts[field]
+                        else:
+                            self._acc[name][field] = counts[field]
+                    self._acc[name]['NUMBER'] += 1
+                self._req_count += 1
+            if ((time() - self._last_sent) > self.desired_interval
+                or self._req_count > self.count_limit
+            ):
+                self.send_data()
 
     def send_data(self):
         if self.scheme == 'udp':
