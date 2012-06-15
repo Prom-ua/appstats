@@ -2,9 +2,9 @@
 
 import json
 import requests
+from socket import socket, AF_INET, SOCK_DGRAM, error as socket_error
 import threading
 from time import time
-from socket import socket, AF_INET, SOCK_DGRAM, error as socket_error
 from urlparse import urlparse
 
 

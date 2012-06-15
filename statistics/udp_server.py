@@ -1,8 +1,8 @@
 # encoding: utf-8
 
-import json
 import eventlet
 from eventlet.green import socket
+import json
 
 from .app import add_data
 
