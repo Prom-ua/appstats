@@ -1,6 +1,19 @@
-{% extends "layout.html" %}
 {% import "helpers.html" as h %}
+<!doctype html>
+<html>
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <head>
+        <title>Statistics</title>
+        <link rel=stylesheet type=text/css href="{{ url_for('static', filename='css/bootstrap.css') }}">
+    </head>
+    <body>
+        <div class=container>
+            {% block body %}
+                {{ h.draw_table(data=data, fields=fields, sort_by_field=sort_by_field, sort_by_period=sort_by_period) }}
+            {% endblock %}
+        </div>
+        <script src="{{ url_for('static', filename='js/bootstrap.js') }}"></script>
+    </body>
+</html>
 
-{% block body %}
-    {{ h.draw_table(data=data, fields=fields, sort_by_field=sort_by_field, sort_by_period=sort_by_period) }}
-{% endblock %}
+

@@ -1,11 +1,15 @@
 # encoding: utf-8
 
 import json
-import requests
-from socket import socket, AF_INET, SOCK_DGRAM, error as socket_error
 import threading
 from time import time
+from socket import socket, AF_INET, SOCK_DGRAM, error as socket_error
 from urlparse import urlparse
+
+import requests
+
+
+lock = threading.Lock()
 
 
 class Client(object):
@@ -14,20 +18,23 @@ class Client(object):
 
     def __init__(self, dsn):
         urlparts = urlparse(dsn)
-        self.scheme = urlparts.scheme
-        if self.scheme == 'udp':
-            self.host = urlparts.hostname
-            self.port = urlparts.port
-        elif self.scheme == 'http':
+        self.protocol = urlparts.scheme
+        self.host = urlparts.hostname
+        self.port = urlparts.port
+        if self.protocol == 'udp':
+            self.url = None
+            if not self.port:
+                raise ValueError("Port undefined")
+        elif self.protocol == 'http':
             self.url = dsn
+            self._session = requests.session()
         else:
-            raise Exception("Invalid scheme in dsn.")
+            raise ValueError("Invalid protocol in dsn.")
         self._acc = {}
         self._last_sent = time()
         self._req_count = 0
 
     def add_data(self, data):
-        lock = threading.Lock()
         with lock:
             for name, counts in data.iteritems():
                 if name not in self._acc:
@@ -42,26 +49,26 @@ class Client(object):
                     self._acc[name]['NUMBER'] += 1
                 self._req_count += 1
             if ((time() - self._last_sent) > self.desired_interval
-                or self._req_count > self.count_limit
+                or self._req_count >= self.count_limit
             ):
                 self.send_data()
 
     def send_data(self):
-        if self.scheme == 'udp':
-            self._send_udp()
-        elif self.scheme == 'http':
-            self._send_http()
+        data = json.dumps(self._acc)
+        if self.protocol == 'udp':
+            self._send_udp(data)
+        elif self.protocol == 'http':
+            self._send_http(data)
         self._last_sent = time()
         self._req_count = 0
         self._acc = {}
 
-    def _send_udp(self):
+    def _send_udp(self, data):
         udp_socket = None
         try:
             udp_socket = socket(AF_INET, SOCK_DGRAM)
             udp_socket.setblocking(False)
-            json_data = json.dumps(self._acc)
-            udp_socket.sendto(json_data, (self.host, self.port))
+            udp_socket.sendto(data, (self.host, self.port))
         except socket_error:
             pass
         finally:
@@ -70,7 +77,9 @@ class Client(object):
                 udp_socket.close()
                 udp_socket = None
 
-    def _send_http(self):
-        with requests.session() as s:
-            headers = {'content-type': 'application/json'}
-            s.post(self.url, data=json.dumps(self._acc), headers=headers)
+    def _send_http(self, data):
+        headers = {'content-type': 'application/json'}
+        try:
+            self._session.post(self.url, data=data, headers=headers)
+        except requests.RequestException:
+            pass

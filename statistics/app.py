@@ -13,6 +13,7 @@ db = redis.Redis(host=app.config['REDIS_HOST'], port=app.config['REDIS_PORT'])
 hour_counter = Counter(db=db, app=app)
 day_counter = Counter(interval=86400, part=3600, db=db, app=app)
 counters = [hour_counter, day_counter]
+number_of_lines = 20
 
 
 def add_data(data):
@@ -62,7 +63,8 @@ def main_page():
         get_sorting_key = lambda tpl: tpl[0]
     else:
         get_sorting_key = lambda tpl: tpl[1][sort_by_period][sort_by_field]
-    data = sorted(data.items(), key=get_sorting_key, reverse=True)
+    data = sorted(data.items(), key=get_sorting_key,
+                  reverse=True)[:number_of_lines]
 
     return render_template('main_page.html', data=data,
                            fields=hour_counter.fields,

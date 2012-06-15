@@ -90,10 +90,10 @@ class Counter(object):
 
     def incrby(self, name, field, increment):
         if ',' in name:
-            raise Exception("Name can't contain ',' (comma)")
+            raise ValueError("Name can't contain ',' (comma)")
 
         if field not in self.fields:
-            raise Exception("No such field")
+            raise ValueError("No such field")
 
         key_last_val = self._make_key(self.last_val_key_format, name=name,
                                       field=field)
