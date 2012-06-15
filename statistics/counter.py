@@ -47,7 +47,7 @@ class Counter(object):
                     self.db.set(key_updated, time())
 
                 updated = float(self.db.get(key_updated))
-                last_val = int(self.db.get(key_last_val) or '0')
+                last_val = float(self.db.get(key_last_val) or '0')
                 passed_time = time() - updated
 
                 # Check whether it is need to be updated
@@ -80,8 +80,8 @@ class Counter(object):
                 key_last_val = self._make_key(self.last_val_key_format,
                                               name=name, field=field)
 
-                last_val = int(self.db.get(key_last_val) or '0')
-                count = sum(map(int, self.db.lrange(key, 0, -1)))
+                last_val = float(self.db.get(key_last_val) or '0')
+                count = sum(map(float, self.db.lrange(key, 0, -1)))
                 count += last_val
                 counts[field] = count
             res[name] = counts
