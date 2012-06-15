@@ -25,7 +25,7 @@ class Counter(object):
                                     field='*')
         for key in self.db.keys(search_key):
             # Example key format:
-            # statistics,path.to.module:Class.method,3600,60,last_val,REQUESTS
+            # statistics,path.to.module:Class.method,3600,60,last_val,CPU
             prefix, name, interval, part, suffix, field = key.split(',')
             if name not in names:
                 names.append(name)

@@ -17,9 +17,9 @@ counters = [hour_counter, day_counter]
 
 def add_data(data):
     for name, counts in data.iteritems():
-        if not 'REQUESTS' in counts:
+        if not 'NUMBER' in counts:
             for counter in counters:
-                counter.incrby(name, "REQUESTS", 1)
+                counter.incrby(name, 'NUMBER', 1)
         for field, val in counts.iteritems():
             for counter in counters:
                 counter.incrby(name, field, val)
@@ -32,10 +32,10 @@ def main_page():
     hour_aver_data = {}
 
     for name, counts in hour_data.iteritems():
-        req_count = counts['REQUESTS']
+        req_count = counts['NUMBER']
         h_aver_counts = {}
         for field in counts:
-            if field == 'REQUESTS':
+            if field == 'NUMBER':
                 req_per_hour = float(counts[field]) / hour_counter.interval
                 h_aver_counts[field] = round(req_per_hour, 2)
             else:
@@ -43,9 +43,9 @@ def main_page():
         hour_aver_data[name] = h_aver_counts
 
     for name, counts in day_aver_data.iteritems():
-        req_count = counts['REQUESTS']
+        req_count = counts['NUMBER']
         for field in counts:
-            if  field == 'REQUESTS':
+            if  field == 'NUMBER':
                 req_per_day = float(counts[field]) / day_counter.interval
                 counts[field] = round(req_per_day, 2)
             else:
@@ -56,7 +56,7 @@ def main_page():
         data[name] = dict(hour=hour_data[name], hour_aver=hour_aver_data[name],
                           day_aver=day_aver_data[name])
 
-    sort_by_field = request.args.get('sort_by_field', 'REQUESTS')
+    sort_by_field = request.args.get('sort_by_field', 'NUMBER')
     sort_by_period = request.args.get('sort_by_period', 'hour')
     if sort_by_field == 'NAME':
         get_sorting_key = lambda tpl: tpl[0]
