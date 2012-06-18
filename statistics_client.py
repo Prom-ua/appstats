@@ -3,7 +3,6 @@
 import json
 import threading
 from time import time
-from socket import socket, AF_INET, SOCK_DGRAM, error as socket_error
 from urlparse import urlparse
 
 import requests
@@ -20,13 +19,7 @@ class Client(object):
     def __init__(self, dsn):
         urlparts = urlparse(dsn)
         self.protocol = urlparts.scheme
-        self.host = urlparts.hostname
-        self.port = urlparts.port
-        if self.protocol == 'udp':
-            self.url = None
-            if not self.port:
-                raise ValueError("Port undefined")
-        elif self.protocol == 'http':
+        if self.protocol == 'http':
             self.url = dsn
             self._session = requests.session()
         else:
@@ -56,27 +49,11 @@ class Client(object):
 
     def send_data(self):
         data = json.dumps(self._acc)
-        if self.protocol == 'udp':
-            self._send_udp(data)
-        elif self.protocol == 'http':
+        if self.protocol == 'http':
             self._send_http(data)
         self._last_sent = time()
         self._req_count = 0
         self._acc = {}
-
-    def _send_udp(self, data):
-        udp_socket = None
-        try:
-            udp_socket = socket(AF_INET, SOCK_DGRAM)
-            udp_socket.setblocking(False)
-            udp_socket.sendto(data, (self.host, self.port))
-        except socket_error:
-            pass
-        finally:
-            # Always close up the socket when we're done
-            if udp_socket is not None:
-                udp_socket.close()
-                udp_socket = None
 
     def _send_http(self, data):
         headers = {'content-type': 'application/json'}

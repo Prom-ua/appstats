@@ -18,13 +18,17 @@ counters = [hour_counter, day_counter]
 number_of_lines = 20
 
 
-def wsgi_app(environ, start_response):
-    iterator = app.wsgi_app(environ, start_response)
-    data = environ.get('statistics.data')
-    if not data:
-        return iterator
-    return ClosingIterator(iterator, add_data(data))
+def add_data_middleware(wsgi_app):
+    def inner(environ, start_response):
+        iterator = wsgi_app(environ, start_response)
+        data = environ.get('statistics.data')
+        if not data:
+            return iterator
+        return ClosingIterator(iterator, lambda: add_data(data))
+    return inner
 
+
+app.wsgi_app = add_data_middleware(app.wsgi_app)
 
 def add_data(data):
     for name, counts in data.iteritems():
