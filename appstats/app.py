@@ -21,7 +21,7 @@ number_of_lines = 20
 def add_data_middleware(wsgi_app):
     def inner(environ, start_response):
         iterator = wsgi_app(environ, start_response)
-        data = environ.get('statistics.data')
+        data = environ.get('appstats.data')
         if not data:
             return iterator
         return ClosingIterator(iterator, lambda: add_data(data))
@@ -91,5 +91,5 @@ def main_page():
 @app.route('/add/', methods=['POST'])
 def add_page():
     data = request.json
-    request.environ['statistics.data'] = data
+    request.environ['appstats.data'] = data
     return 'ok'
