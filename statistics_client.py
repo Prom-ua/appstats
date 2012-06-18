@@ -19,11 +19,8 @@ class Client(object):
     def __init__(self, dsn):
         urlparts = urlparse(dsn)
         self.protocol = urlparts.scheme
-        if self.protocol == 'http':
-            self.url = dsn
-            self._session = requests.session()
-        else:
-            raise ValueError("Invalid protocol in dsn.")
+        self.url = dsn
+        self._session = requests.session()
         self._acc = {}
         self._last_sent = time()
         self._req_count = 0
@@ -49,8 +46,7 @@ class Client(object):
 
     def send_data(self):
         data = json.dumps(self._acc)
-        if self.protocol == 'http':
-            self._send_http(data)
+        self._send_http(data)
         self._last_sent = time()
         self._req_count = 0
         self._acc = {}
