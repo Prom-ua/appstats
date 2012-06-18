@@ -1,5 +1,5 @@
-Flask
-Flask-Script
-redis
-eventlet
-requests
+Flask==0.8
+Flask-Script==0.3.3
+redis==2.4.13
+eventlet==0.9.16
+requests==0.10.8

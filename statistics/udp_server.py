@@ -10,6 +10,12 @@ from .app import add_data
 
 class UDPServer(object):
 
+    BUF_SIZE = 2 ** 16
+    POOL_SIZE = 1000
+    _socket = socket.socket
+    _pool = eventlet.GreenPool(size=POOL_SIZE)
+    _spawn = _pool.spawn_n
+
     def __init__(self, host=None, port=None):
         self.host = host
         self.port = port
@@ -19,12 +25,11 @@ class UDPServer(object):
         add_data(data)
 
     def run(self):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock = self._socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.bind((self.host, self.port))
-        pool = eventlet.GreenPool()
         while True:
             try:
-                pool.spawn_n(self.handle, *sock.recvfrom(2 ** 16))
+                self._spawn(self.handle, *sock.recvfrom(self.BUF_SIZE))
             except (SystemExit, KeyboardInterrupt):
                 break

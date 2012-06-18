@@ -13,6 +13,7 @@ lock = threading.Lock()
 
 
 class Client(object):
+
     count_limit = 100
     desired_interval = 600
 

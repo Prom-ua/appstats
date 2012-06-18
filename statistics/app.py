@@ -2,7 +2,8 @@
 
 import redis
 
-from flask import Flask, render_template, redirect, request
+from flask import Flask, render_template, request
+from werkzeug.wsgi import ClosingIterator
 
 from .counter import Counter
 
@@ -15,6 +16,14 @@ hour_counter = Counter(db=db, app=app)
 day_counter = Counter(interval=86400, part=3600, db=db, app=app)
 counters = [hour_counter, day_counter]
 number_of_lines = 20
+
+
+def wsgi_app(environ, start_response):
+    iterator = app.wsgi_app(environ, start_response)
+    data = environ.get('statistics.data')
+    if not data:
+        return iterator
+    return ClosingIterator(iterator, add_data(data))
 
 
 def add_data(data):
@@ -78,7 +87,5 @@ def main_page():
 @app.route('/add/', methods=['POST'])
 def add_page():
     data = request.json
-    add_data(data)
-    hour_counter.update()
-    day_counter.update()
-    return redirect('/')
+    request.environ['statistics.data'] = data
+    return 'ok'

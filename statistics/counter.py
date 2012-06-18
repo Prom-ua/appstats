@@ -4,6 +4,7 @@ from time import time
 
 
 class Counter(object):
+
     last_val_key_format = '%(prefix)s,%(name)s,%(interval)s,%(part)s,last_val,%(field)s'
     updated_key_format = '%(prefix)s,%(name)s,%(interval)s,%(part)s,updated,%(field)s'
     key_format = '%(prefix)s,%(name)s,%(interval)s,%(part)s,%(field)s'
@@ -47,7 +48,7 @@ class Counter(object):
                     self.db.set(key_updated, time())
 
                 updated = float(self.db.get(key_updated))
-                last_val = float(self.db.get(key_last_val) or '0')
+                last_val = int(self.db.get(key_last_val) or '0')
                 passed_time = time() - updated
 
                 # Check whether it is need to be updated
@@ -73,19 +74,23 @@ class Counter(object):
         if not names:
             names = self._get_names()
 
+        pl = self.db.pipeline()
         for name in names:
-            counts = {}
             for field in self.fields:
                 key = self._make_key(self.key_format, name=name, field=field)
                 key_last_val = self._make_key(self.last_val_key_format,
                                               name=name, field=field)
-
-                last_val = float(self.db.get(key_last_val) or '0')
-                count = sum(map(float, self.db.lrange(key, 0, -1)))
+                pl.get(key_last_val)
+                pl.lrange(key, 0, -1)
+        pl_res = pl.execute()
+        for name in names:
+            counts = {}
+            for field in self.fields:
+                last_val = int(pl_res.pop(0) or '0')
+                count = sum(map(int, pl_res.pop(0)))
                 count += last_val
                 counts[field] = count
             res[name] = counts
-
         return res
 
     def incrby(self, name, field, increment):
