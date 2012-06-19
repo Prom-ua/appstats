@@ -11,7 +11,7 @@ import requests
 lock = threading.Lock()
 
 
-class Client(object):
+class AppStatsClient(object):
 
     count_limit = 100
     desired_interval = 600
