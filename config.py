@@ -6,4 +6,4 @@ REDIS_HOST = '127.0.0.1'
 REDIS_PORT = 6379
 
 REDIS_KEYS_PREFIX = 'appstats'
-FIELDS = ['CPU', 'TOTAL', 'SQL', 'SOLR', 'REDIS', 'MEMCACHED', 'NUMBER']
+FIELDS = ['cpu_time', 'real_time', 'sql', 'solr', 'redis', 'cache', 'memcached', 'NUMBER']
