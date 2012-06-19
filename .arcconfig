@@ -1,0 +1,4 @@
+{
+  "project_id" : "appstats",
+  "conduit_uri" : "http://phabricator.uaprom/api/"
+}
