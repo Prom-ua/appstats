@@ -98,8 +98,8 @@ class Counter(object):
             raise ValueError("Name can't contain ',' (comma)")
 
         if field not in self.fields:
-            raise ValueError("No such field")
+            raise ValueError("No such field: %s" % field)
 
         key_last_val = self._make_key(self.last_val_key_format, name=name,
                                       field=field)
-        self.db.incr(key_last_val, increment)
+        self.db.incr(key_last_val, int(increment))
