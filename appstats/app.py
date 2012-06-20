@@ -9,8 +9,9 @@ from .counter import Counter
 
 
 app = Flask(__name__)
-app.config.from_object('config')
-app.config.from_pyfile('settings.cfg', silent=True)
+app.config.from_object('appstats.config')
+if not app.config.from_envvar('APPSTATS_SETTINGS', silent=True):
+    app.config.from_pyfile('../settings.cfg', silent=True)
 db = redis.Redis(host=app.config['REDIS_HOST'], port=app.config['REDIS_PORT'])
 hour_counter = Counter(db=db, app=app)
 day_counter = Counter(interval=86400, part=3600, db=db, app=app)
