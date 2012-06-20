@@ -3,7 +3,6 @@
 import json
 import threading
 from time import time
-from urlparse import urlparse
 
 import requests
 
@@ -16,10 +15,8 @@ class AppStatsClient(object):
     count_limit = 100
     desired_interval = 600
 
-    def __init__(self, dsn):
-        urlparts = urlparse(dsn)
-        self.protocol = urlparts.scheme
-        self.url = dsn
+    def __init__(self, url):
+        self.url = url
         self._session = requests.session()
         self._acc = {}
         self._last_sent = time()
@@ -39,7 +36,7 @@ class AppStatsClient(object):
                             self._acc[name][field] = counts[field]
                     self._acc[name]['NUMBER'] += 1
                 self._req_count += 1
-            if ((time() - self._last_sent) > self.desired_interval
+            if ((time() - self._last_sent) >= self.desired_interval
                 or self._req_count >= self.count_limit
             ):
                 self.send_data()
