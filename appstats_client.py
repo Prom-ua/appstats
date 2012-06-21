@@ -14,6 +14,7 @@ class AppStatsClient(object):
 
     count_limit = 100
     desired_interval = 600
+    req_timeout = 1
 
     def __init__(self, url):
         self.url = url
@@ -51,6 +52,7 @@ class AppStatsClient(object):
     def _send_http(self, data):
         headers = {'content-type': 'application/json'}
         try:
-            self._session.post(self.url, data=data, headers=headers)
+            self._session.post(self.url, data=data, headers=headers,
+                               timeout=self.req_timeout)
         except requests.RequestException:
             pass
