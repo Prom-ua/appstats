@@ -56,14 +56,14 @@ def main_page():
     sort_by_period = request.args.get('sort_by_period', 'hour')
     number_of_lines = request.args.get('number_of_lines', 20, int)
 
-    data = mongo_db.data.find()
+    table = mongo_db.appstats_table.find()
     if sort_by_field == 'name':
-        data = data.sort('name')
+        table = table.sort('name')
     else:
-        data = data.sort('%s_%s' % (sort_by_field, sort_by_period), DESCENDING)
-    data = data.limit(number_of_lines)
+        table = table.sort('%s_%s' % (sort_by_field, sort_by_period), DESCENDING)
+    table = table.limit(number_of_lines)
 
-    return render_template('main_page.html', data=data,
+    return render_template('main_page.html', table=table,
                            fields=hour_counter.fields,
                            sort_by_field=sort_by_field,
                            sort_by_period=sort_by_period,
