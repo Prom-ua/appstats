@@ -15,17 +15,21 @@ app.config.from_object('appstats.config')
 if not app.config.from_envvar('APPSTATS_SETTINGS', silent=True):
     app.config.from_pyfile('/etc/appstats.cfg', silent=True)
     app.config.from_pyfile(expanduser('~/.appstats.cfg'), silent=True)
+if 'NUMBER' not in app.config['FIELDS']:
+    app.config['FIELDS'].append('NUMBER')
+
 redis_db = redis.Redis(host=app.config['REDIS_HOST'], port=app.config['REDIS_PORT'])
+
 mongo_conn = Connection(host=app.config['MONGO_HOST'],
                       port=app.config['MONGO_PORT'],
                       network_timeout=30,
                       _connect=False
              )
 mongo_db = mongo_conn[app.config['MONGO_DB_NAME']]
+
 hour_counter = Counter(db=redis_db, app=app)
 day_counter = Counter(interval=86400, part=3600, db=redis_db, app=app)
 counters = [hour_counter, day_counter]
-number_of_lines = 20
 
 
 def add_data_middleware(wsgi_app):
@@ -57,14 +61,14 @@ def main_page():
     sort_by_period = request.args.get('sort_by_period', 'hour')
     number_of_lines = request.args.get('number_of_lines', 20, int)
 
-    table = mongo_db.appstats_table.find()
+    docs = mongo_db.appstats_docs.find()
     if sort_by_field == 'name':
-        table = table.sort('name')
+        docs = docs.sort('name')
     else:
-        table = table.sort('%s_%s' % (sort_by_field, sort_by_period), DESCENDING)
-    table = table.limit(number_of_lines)
+        docs = docs.sort('%s_%s' % (sort_by_field, sort_by_period), DESCENDING)
+    docs = docs.limit(number_of_lines)
 
-    return render_template('main_page.html', table=table,
+    return render_template('main_page.html', docs=docs,
                            fields=hour_counter.fields,
                            sort_by_field=sort_by_field,
                            sort_by_period=sort_by_period,

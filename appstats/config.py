@@ -10,4 +10,4 @@ MONGO_PORT = 27017
 MONGO_DB_NAME = 'appstats'
 
 REDIS_KEYS_PREFIX = 'appstats'
-FIELDS = ['cpu_time', 'real_time', 'sql', 'solr', 'redis', 'memcached', 'NUMBER']
+FIELDS = ['cpu_time', 'real_time', 'sql', 'solr', 'redis', 'memcached']

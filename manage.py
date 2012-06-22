@@ -40,25 +40,25 @@ def update():
                 counts[field] = round(float(counts[field]) / req_count, 2)
 
     # Transforming data into flat form
-    table = []
+    docs = []
     for name in hour_data:
-        record = {}
-        record['name'] = name
+        doc = {}
+        doc['name'] = name
         for field in hour_counter.fields:
             key = '%s_%s' % (field, 'hour')
-            record[key] = hour_data[name][field]
+            doc[key] = hour_data[name][field]
 
             key = '%s_%s' % (field, 'hour_aver')
-            record[key] = hour_aver_data[name][field]
+            doc[key] = hour_aver_data[name][field]
 
             key = '%s_%s' % (field, 'day_aver')
-            record[key] = day_aver_data[name][field]
-        table.append(record)
+            doc[key] = day_aver_data[name][field]
+        docs.append(doc)
 
     # Replace with new data
     mongo_db.appstats_table.remove()
-    if table:
-        mongo_db.appstats_table.insert(table)
+    if docs:
+        mongo_db.appstats_docs.insert(docs)
 
 
 if __name__ == '__main__':
