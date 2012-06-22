@@ -57,7 +57,8 @@ def update():
 
     # Replace with new data
     mongo_db.data.remove()
-    mongo_db.data.insert(data)
+    if data:
+        mongo_db.data.insert(data)
 
 
 if __name__ == '__main__':
