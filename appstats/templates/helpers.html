@@ -2,10 +2,10 @@
     <table class="table table-bordered table-striped table-condensed">
         <thead>
             <tr>
-                {% if sort_by_field == 'NAME' %}
-                    <th> NAME </th>
+                {% if sort_by_field == 'name' %}
+                    <th> name </th>
                 {% else %}
-                    <th> <a href="{{ url_for('main_page', sort_by_field='NAME', sort_by_period='hour', number_of_lines=number_of_lines) }}"> NAME </a> </th>
+                    <th> <a href="{{ url_for('main_page', sort_by_field='name', sort_by_period='hour', number_of_lines=number_of_lines) }}"> name </a> </th>
                 {% endif %}
                 {% for field in fields %}
                     <th></th>
@@ -35,14 +35,14 @@
                 {% endfor %}
             </tr>
             <tbody>
-                {% for name, row in data %}
+                {% for record in data %}
                     <tr>
-                        <td> {{ name }} </td>     
+                        <td> {{ record['name'] }} </td>     
                         {% for field in fields %}
                                 <td></td>
-                                <td> {{ row['hour'][field] }} </td>     
-                                <td> {{ row['hour_aver'][field] }} </td>     
-                                <td> {{ row['day_aver'][field] }} </td>     
+                                <td> {{ record['%s_%s' % (field, 'hour')] }} </td>     
+                                <td> {{ record['%s_%s' % (field, 'hour_aver')] }} </td>     
+                                <td> {{ record['%s_%s' % (field, 'day_aver')] }} </td>     
                         {% endfor %}
                     </tr>
                 {% endfor %}
