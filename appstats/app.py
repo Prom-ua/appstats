@@ -17,7 +17,10 @@ if not app.config.from_envvar('APPSTATS_SETTINGS', silent=True):
     app.config.from_pyfile(expanduser('~/.appstats.cfg'), silent=True)
 redis_db = redis.Redis(host=app.config['REDIS_HOST'], port=app.config['REDIS_PORT'])
 mongo_db = Connection(host=app.config['MONGO_HOST'],
-                      port=app.config['MONGO_PORT']).appstats
+                      port=app.config['MONGO_PORT'],
+                      network_timeout=30,
+                      _connect=False
+           ).appstats
 hour_counter = Counter(db=redis_db, app=app)
 day_counter = Counter(interval=86400, part=3600, db=redis_db, app=app)
 counters = [hour_counter, day_counter]
