@@ -15,20 +15,21 @@ app.config.from_object('appstats.config')
 if not app.config.from_envvar('APPSTATS_SETTINGS', silent=True):
     app.config.from_pyfile('/etc/appstats.cfg', silent=True)
     app.config.from_pyfile(expanduser('~/.appstats.cfg'), silent=True)
-if 'NUMBER' not in app.config['FIELDS']:
-    app.config['FIELDS'].append('NUMBER')
+
+fields = app.config['FIELDS'][:]
+if 'NUMBER' not in fields:
+    fields.append('NUMBER')
 
 redis_db = redis.Redis(host=app.config['REDIS_HOST'], port=app.config['REDIS_PORT'])
 
 mongo_conn = Connection(host=app.config['MONGO_HOST'],
-                      port=app.config['MONGO_PORT'],
-                      network_timeout=30,
-                      _connect=False
-             )
+                        port=app.config['MONGO_PORT'], network_timeout=30,
+                        _connect=False)
 mongo_db = mongo_conn[app.config['MONGO_DB_NAME']]
 
-hour_counter = Counter(db=redis_db, app=app)
-day_counter = Counter(interval=86400, part=3600, db=redis_db, app=app)
+hour_counter = Counter(db=redis_db, app=app, fields=fields)
+day_counter = Counter(db=redis_db, app=app, fields=fields, interval=86400,
+                      part=3600)
 counters = [hour_counter, day_counter]
 
 

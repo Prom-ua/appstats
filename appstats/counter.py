@@ -9,12 +9,12 @@ class Counter(object):
     updated_key_format = '%(prefix)s,%(name)s,%(interval)s,%(part)s,updated,%(field)s'
     key_format = '%(prefix)s,%(name)s,%(interval)s,%(part)s,%(field)s'
 
-    def __init__(self, db, app, interval=3600, part=60):
+    def __init__(self, db, app, fields, interval=3600, part=60):
         self.db = db
         self.prefix = app.config['REDIS_KEYS_PREFIX']
         self.interval = interval
         self.part = part
-        self.fields = app.config['FIELDS']
+        self.fields = fields
 
     def _make_key(self, key_format, **kwargs):
         kwargs.update(prefix=self.prefix, interval=self.interval, part=self.part)
