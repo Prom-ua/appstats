@@ -56,7 +56,7 @@ def update():
         docs.append(doc)
 
     # Replace with new data
-    mongo_db.appstats_table.remove()
+    mongo_db.appstats_docs.remove()
     if docs:
         mongo_db.appstats_docs.insert(docs)
 
