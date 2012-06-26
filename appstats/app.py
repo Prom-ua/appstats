@@ -7,7 +7,7 @@ from flask import Flask, render_template, request
 from pymongo import Connection, DESCENDING
 from werkzeug.wsgi import ClosingIterator
 
-from .counter import Counter, HourlyCounter
+from .counter import RollingCounter, HourlyCounter
 
 
 app = Flask(__name__)
@@ -20,16 +20,17 @@ fields = app.config['FIELDS'][:]
 if 'NUMBER' not in fields:
     fields.append('NUMBER')
 
-redis_db = redis.Redis(host=app.config['REDIS_HOST'], port=app.config['REDIS_PORT'])
+redis_db = redis.Redis(host=app.config['REDIS_HOST'],
+                       port=app.config['REDIS_PORT'])
 
 mongo_conn = Connection(host=app.config['MONGO_HOST'],
                         port=app.config['MONGO_PORT'], network_timeout=30,
                         _connect=False)
 mongo_db = mongo_conn[app.config['MONGO_DB_NAME']]
 
-last_hour_counter = Counter(db=redis_db, app=app, fields=fields)
-last_day_counter = Counter(db=redis_db, app=app, fields=fields, interval=86400,
-                           part=3600)
+last_hour_counter = RollingCounter(db=redis_db, app=app, fields=fields)
+last_day_counter = RollingCounter(db=redis_db, app=app, fields=fields,
+                                  interval=86400, part=3600)
 hourly_counter = HourlyCounter(redis_db=redis_db, mongo_db=mongo_db,
                                app=app, fields=fields)
 counters = [last_hour_counter, last_day_counter, hourly_counter]
