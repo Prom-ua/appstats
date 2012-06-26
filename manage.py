@@ -2,7 +2,7 @@
 
 from flaskext.script import Manager
 
-from appstats.app import app, hour_counter, day_counter, mongo_db
+from appstats.app import app, last_hour_counter, last_day_counter, counters, mongo_db
 
 
 manager = Manager(app)
@@ -10,11 +10,11 @@ manager = Manager(app)
 
 @manager.command
 def update():
-    hour_counter.update()
-    day_counter.update()
+    for counter in counters:
+        counter.update()
 
-    hour_data = hour_counter.get_vals()
-    day_aver_data = day_counter.get_vals()
+    hour_data = last_hour_counter.get_vals()
+    day_aver_data = last_day_counter.get_vals()
     hour_aver_data = {}
 
     # Calculating hour average data
@@ -23,7 +23,7 @@ def update():
         h_aver_counts = {}
         for field in counts:
             if field == 'NUMBER':
-                req_per_hour = float(counts[field]) / hour_counter.interval
+                req_per_hour = float(counts[field]) / last_hour_counter.interval
                 h_aver_counts[field] = round(req_per_hour, 2)
             else:
                 h_aver_counts[field] = round(float(counts[field]) / req_count, 2)
@@ -34,7 +34,7 @@ def update():
         req_count = counts['NUMBER']
         for field in counts:
             if  field == 'NUMBER':
-                req_per_day = float(counts[field]) / day_counter.interval
+                req_per_day = float(counts[field]) / last_day_counter.interval
                 counts[field] = round(req_per_day, 2)
             else:
                 counts[field] = round(float(counts[field]) / req_count, 2)
@@ -44,7 +44,7 @@ def update():
     for name in hour_data:
         doc = {}
         doc['name'] = name
-        for field in hour_counter.fields:
+        for field in last_hour_counter.fields:
             key = '%s_%s' % (field, 'hour')
             doc[key] = hour_data[name][field]
 

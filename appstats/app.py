@@ -7,7 +7,7 @@ from flask import Flask, render_template, request
 from pymongo import Connection, DESCENDING
 from werkzeug.wsgi import ClosingIterator
 
-from .counter import Counter
+from .counter import Counter, HourlyCounter
 
 
 app = Flask(__name__)
@@ -27,10 +27,12 @@ mongo_conn = Connection(host=app.config['MONGO_HOST'],
                         _connect=False)
 mongo_db = mongo_conn[app.config['MONGO_DB_NAME']]
 
-hour_counter = Counter(db=redis_db, app=app, fields=fields)
-day_counter = Counter(db=redis_db, app=app, fields=fields, interval=86400,
-                      part=3600)
-counters = [hour_counter, day_counter]
+last_hour_counter = Counter(db=redis_db, app=app, fields=fields)
+last_day_counter = Counter(db=redis_db, app=app, fields=fields, interval=86400,
+                           part=3600)
+hourly_counter = HourlyCounter(redis_db=redis_db, mongo_db=mongo_db,
+                               app=app, fields=fields)
+counters = [last_hour_counter, last_day_counter, hourly_counter]
 
 
 def add_data_middleware(wsgi_app):
@@ -70,7 +72,7 @@ def main_page():
     docs = docs.limit(number_of_lines)
 
     return render_template('main_page.html', docs=docs,
-                           fields=hour_counter.fields,
+                           fields=last_hour_counter.fields,
                            sort_by_field=sort_by_field,
                            sort_by_period=sort_by_period,
                            number_of_lines=number_of_lines)
