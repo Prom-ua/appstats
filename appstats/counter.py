@@ -115,7 +115,7 @@ class RollingCounter(object):
 
 class HourlyCounter(object):
     """
-    The HourlyCounter stores data, accumulated during strict hour period.
+    The HourlyCounter stores data, accumulated during strict hours intervals.
     E.g. data that came from 00:00 to 00:59.
     """
 
