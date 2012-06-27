@@ -2,6 +2,7 @@
 
 import datetime
 from time import time
+from calendar import timegm
 
 
 class RollingCounter(object):
@@ -120,7 +121,7 @@ class HourlyCounter(object):
     """
 
     key_format = '%(prefix)s,hourly,%(name)s,%(field)s'
-    key_prev_hour_format = '%(prefix)s,hourly,prev_hour'
+    key_prev_upd_format = '%(prefix)s,hourly,prev_upd'
 
     def __init__(self, redis_db, mongo_db, fields, redis_prefix):
         self.redis_db = redis_db
@@ -155,26 +156,28 @@ class HourlyCounter(object):
         self.redis_db.incr(key, int(increment))
 
     def update(self):
-        curr_hour = datetime.datetime.now().hour
-        key_prev_hour = self._make_key(self.key_prev_hour_format)
-        prev_hour = self.redis_db.get(key_prev_hour)
-        if prev_hour:
-            prev_hour = int(prev_hour)
-        else:
-            # If there isn't prev_hour in redis,
-            # we will use 'one hour before current time' variable instead:
-            self.redis_db.set(key_prev_hour, curr_hour - 1)
-            prev_hour = curr_hour - 1
+        key_prev_upd = self._make_key(self.key_prev_upd_format)
+        prev_upd = self.redis_db.get(key_prev_upd)
 
-        # Number of hours passed after our last submission:
-        passed_hours = curr_hour - prev_hour
-        if not passed_hours:
+        # Get current datetime rounded to hour:
+        now = datetime.datetime.utcnow()
+        now = datetime.datetime.combine(datetime.date.today(),
+                                        datetime.time(now.hour))
+        if prev_upd:
+            prev_upd = int(prev_upd) # Get timestamp
+            prev_upd = datetime.datetime.utcfromtimestamp(prev_upd)
+        else:
+            # If there isn't prev_upd in redis,
+            # we will use 'one hour before current time' variable instead:
+            prev_upd = now - datetime.timedelta(hours=1)
+            # Get unix timestamp:
+            prev_upd_unix = timegm(prev_upd.utctimetuple())
+            self.redis_db.set(key_prev_upd, prev_upd_unix)
+
+        passed_hours = int((now - prev_upd).total_seconds()) / 3600
+        if passed_hours == 0:
             # Too early, exiting
             return
-        # The case when we cross the boundary of the day:
-        if passed_hours < 0:
-            passed_hours = 24 - prev_hour + curr_hour
-
         names = self._get_names()
         for name in names:
             doc = dict(name=name)
@@ -186,21 +189,14 @@ class HourlyCounter(object):
 
                 # For each passed hour add separate doc with the specific date:
                 docs = []
-                today = datetime.date.today()
                 for i in xrange(passed_hours):
-                    new_hour = curr_hour - i
-                    # The case when we cross the boundary of the day:
-                    if new_hour < 0:
-                        new_hour = 24 - i + curr_hour
-                        today = today - datetime.timedelta(1)
-                    # Round the date for a particular hour:
-                    new_date = datetime.datetime.combine(today,
-                        datetime.time(new_hour))
-                    doc['date'] = new_date
+                    date = now - datetime.timedelta(hours=i)
+                    doc['date'] = date
                     docs.append(doc.copy())
-                # New val = rest
+                # New val = rest:
                 val -= passed_hours * val_per_hour
                 self.redis_db.set(key, val)
             # Inserting docs in mongo:
             self.collection.insert(docs)
-        self.redis_db.set(key_prev_hour, curr_hour)
+        prev_upd = timegm(now.utctimetuple())
+        self.redis_db.set(key_prev_upd, prev_upd)
