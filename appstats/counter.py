@@ -14,9 +14,9 @@ class RollingCounter(object):
     updated_key_format = '%(prefix)s,%(name)s,%(interval)s,%(part)s,updated,%(field)s'
     key_format = '%(prefix)s,%(name)s,%(interval)s,%(part)s,%(field)s'
 
-    def __init__(self, db, app, fields, interval=3600, part=60):
+    def __init__(self, db, fields, redis_prefix, interval=3600, part=60):
         self.db = db
-        self.prefix = app.config['REDIS_KEYS_PREFIX']
+        self.prefix = redis_prefix
         self.interval = interval
         self.part = part
         self.fields = fields
@@ -122,11 +122,11 @@ class HourlyCounter(object):
     key_format = '%(prefix)s,hourly,%(name)s,%(field)s'
     key_prev_hour_format = '%(prefix)s,hourly,prev_hour'
 
-    def __init__(self, redis_db, mongo_db, app, fields):
+    def __init__(self, redis_db, mongo_db, fields, redis_prefix):
         self.redis_db = redis_db
         self.fields = fields
         self.collection = mongo_db.appstats_hourly
-        self.prefix = app.config['REDIS_KEYS_PREFIX']
+        self.prefix = redis_prefix
 
     def _get_names(self):
         names = []
