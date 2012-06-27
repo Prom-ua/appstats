@@ -186,11 +186,16 @@ class HourlyCounter(object):
 
                 # For each passed hour add separate doc with the specific date:
                 docs = []
-                date = datetime.datetime.now().date()
+                today = datetime.date.today()
                 for i in xrange(passed_hours):
+                    new_hour = curr_hour - i
+                    # The case when we cross the boundary of the day:
+                    if new_hour < 0:
+                        new_hour = 24 - i + curr_hour
+                        today = today - datetime.timedelta(1)
                     # Round the date for a particular hour:
-                    new_date = datetime.datetime.combine(date,
-                        datetime.time(curr_hour - i))
+                    new_date = datetime.datetime.combine(today,
+                        datetime.time(new_hour))
                     doc['date'] = new_date
                     docs.append(doc.copy())
                 # New val = rest
