@@ -44,38 +44,38 @@ class RollingCounter(object):
         for name in names:
             for field in self.fields:
                 key = self._make_key(self.key_format, name=name, field=field)
-                key_last_val = self._make_key(self.last_val_key_format,
+                last_val_key = self._make_key(self.last_val_key_format,
                                               name=name, field=field)
-                key_updated = self._make_key(self.updated_key_format,
+                updated_key = self._make_key(self.updated_key_format,
                                              name=name, field=field)
 
                 if self.db.llen(key) == 0:
                     for i in xrange(self.interval / self.part - 1):
                         self.db.rpush(key, 0)
-                    self.db.set(key_updated, time())
+                    self.db.set(updated_key, time())
 
-                updated = float(self.db.get(key_updated))
-                last_val = int(self.db.get(key_last_val) or '0')
+                updated = float(self.db.get(updated_key))
+                last_val = int(self.db.get(last_val_key) or '0')
                 passed_time = time() - updated
 
-                # Check whether it is need to be updated:
+                # Check whether it is need to be updated
                 if passed_time > self.part:
                     num_of_new_parts = int(passed_time) / self.part
                     val_per_part = int(last_val / passed_time * self.part)
 
                     # For each new part perform a shift,
-                    # filling a new cell with the value per one part:
+                    # filling a new cell with the value per one part
                     for i in xrange(num_of_new_parts):
                         self.db.lpop(key)
                         self.db.rpush(key, val_per_part)
 
-                    # New last_val = rest:
+                    # New last_val = rest
                     last_val -= num_of_new_parts * val_per_part
-                    self.db.set(key_last_val, last_val)
+                    self.db.set(last_val_key, last_val)
 
-                    # Evaluating time correction:
+                    # Evaluating time correction
                     rest_time = passed_time - num_of_new_parts * self.part
-                    self.db.set(key_updated, time() - rest_time)
+                    self.db.set(updated_key, time() - rest_time)
 
     def get_vals(self, names=None):
         res = {}
@@ -87,9 +87,9 @@ class RollingCounter(object):
         for name in names:
             for field in self.fields:
                 key = self._make_key(self.key_format, name=name, field=field)
-                key_last_val = self._make_key(self.last_val_key_format,
+                last_val_key = self._make_key(self.last_val_key_format,
                                               name=name, field=field)
-                pl.get(key_last_val)
+                pl.get(last_val_key)
                 pl.lrange(key, 0, -1)
         pl_res = pl.execute()
         for name in names:
@@ -109,9 +109,9 @@ class RollingCounter(object):
         if field not in self.fields:
             raise ValueError("No such field: %s" % field)
 
-        key_last_val = self._make_key(self.last_val_key_format, name=name,
+        last_val_key = self._make_key(self.last_val_key_format, name=name,
                                       field=field)
-        self.db.incr(key_last_val, int(increment))
+        self.db.incr(last_val_key, int(increment))
 
 
 class HourlyCounter(object):
@@ -121,7 +121,7 @@ class HourlyCounter(object):
     """
 
     key_format = '%(prefix)s,hourly,%(name)s,%(field)s'
-    key_prev_upd_format = '%(prefix)s,hourly,prev_upd'
+    prev_upd_key_format = '%(prefix)s,hourly,prev_upd'
 
     def __init__(self, redis_db, mongo_db, fields, redis_prefix):
         self.redis_db = redis_db
@@ -156,25 +156,24 @@ class HourlyCounter(object):
         self.redis_db.incr(key, int(increment))
 
     def update(self):
-        key_prev_upd = self._make_key(self.key_prev_upd_format)
-        prev_upd = self.redis_db.get(key_prev_upd)
+        prev_upd_key = self._make_key(self.prev_upd_key_format)
+        prev_upd = self.redis_db.get(prev_upd_key)
 
-        # Get current datetime rounded to hour:
+        # Get current datetime rounded to hour
         now = datetime.datetime.utcnow()
-        now = datetime.datetime.combine(datetime.date.today(),
-                                        datetime.time(now.hour))
+        now = datetime.datetime.combine(now.date(), datetime.time(now.hour))
         if prev_upd:
-            prev_upd = int(prev_upd) # Get timestamp
+            prev_upd = int(prev_upd) # Get previous timestamp
             prev_upd = datetime.datetime.utcfromtimestamp(prev_upd)
         else:
             # If there isn't prev_upd in redis,
-            # we will use 'one hour before current time' variable instead:
+            # we will use 'one hour before current time' variable instead
             prev_upd = now - datetime.timedelta(hours=1)
-            # Get unix timestamp:
+            # Get unix timestamp
             prev_upd_unix = timegm(prev_upd.utctimetuple())
-            self.redis_db.set(key_prev_upd, prev_upd_unix)
-
-        passed_hours = int((now - prev_upd).total_seconds()) / 3600
+            self.redis_db.set(prev_upd_key, prev_upd_unix)
+        delta = now - prev_upd
+        passed_hours = delta.days * 24 + delta.seconds / 3600
         if passed_hours == 0:
             # Too early, exiting
             return
@@ -187,16 +186,15 @@ class HourlyCounter(object):
                 val_per_hour = val / passed_hours
                 doc[field] = val_per_hour
 
-                # For each passed hour add separate doc with the specific date:
+                # For each passed hour add separate doc with the specific date
                 docs = []
-                for i in xrange(passed_hours):
-                    date = now - datetime.timedelta(hours=i)
+                for offset in xrange(passed_hours):
+                    date = now - datetime.timedelta(hours=offset)
                     doc['date'] = date
                     docs.append(doc.copy())
-                # New val = rest:
+                # New val = rest
                 val -= passed_hours * val_per_hour
                 self.redis_db.set(key, val)
-            # Inserting docs in mongo:
             self.collection.insert(docs)
         prev_upd = timegm(now.utctimetuple())
-        self.redis_db.set(key_prev_upd, prev_upd)
+        self.redis_db.set(prev_upd_key, prev_upd)
