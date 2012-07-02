@@ -21,8 +21,9 @@ if 'NUMBER' not in fields:
     fields.append('NUMBER')
 
 redis_db = redis.Redis(host=app.config['REDIS_HOST'],
-                       port=app.config['REDIS_PORT'])
-redis_prefix = app.config['REDIS_KEYS_PREFIX']
+                       port=app.config['REDIS_PORT'],
+                       db=app.config['REDIS_DB'])
+REDIS_PREFIX = 'appstats'
 
 mongo_conn = Connection(host=app.config['MONGO_HOST'],
                         port=app.config['MONGO_PORT'], network_timeout=30,
@@ -30,14 +31,14 @@ mongo_conn = Connection(host=app.config['MONGO_HOST'],
 mongo_db = mongo_conn[app.config['MONGO_DB_NAME']]
 
 last_hour_counter = RollingCounter(db=redis_db, fields=fields,
-                                   redis_prefix=redis_prefix)
+                                   redis_prefix=REDIS_PREFIX)
 
 last_day_counter = RollingCounter(db=redis_db, fields=fields,
-                                  redis_prefix=redis_prefix, interval=86400,
+                                  redis_prefix=REDIS_PREFIX, interval=86400,
                                   part=3600)
 
 hourly_counter = HourlyCounter(redis_db=redis_db, mongo_db=mongo_db,
-                               fields=fields, redis_prefix=redis_prefix)
+                               fields=fields, redis_prefix=REDIS_PREFIX)
 
 counters = [last_hour_counter, last_day_counter, hourly_counter]
 
