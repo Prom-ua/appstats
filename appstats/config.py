@@ -1,4 +1,3 @@
-DEBUG = True
 UDP_PORT = 9001
 UDP_HOST = '127.0.0.1'
 
