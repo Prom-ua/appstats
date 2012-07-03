@@ -41,6 +41,7 @@ class RollingCounter(object):
 
     def update(self):
         names = self._get_names()
+        pl = self.db.pipeline()
         for name in names:
             for field in self.fields:
                 key = self._make_key(self.key_format, name=name, field=field)
@@ -66,16 +67,17 @@ class RollingCounter(object):
                     # For each new part perform a shift,
                     # filling a new cell with the value per one part
                     for i in xrange(num_of_new_parts):
-                        self.db.lpop(key)
-                        self.db.rpush(key, val_per_part)
+                        pl.lpop(key)
+                        pl.rpush(key, val_per_part)
 
                     # New last_val = rest
                     last_val -= num_of_new_parts * val_per_part
-                    self.db.set(last_val_key, last_val)
+                    pl.set(last_val_key, last_val)
 
                     # Evaluating time correction
                     rest_time = passed_time - num_of_new_parts * self.part
-                    self.db.set(updated_key, time() - rest_time)
+                    pl.set(updated_key, time() - rest_time)
+        pl.execute()
 
     def get_vals(self, names=None):
         res = {}
