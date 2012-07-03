@@ -62,7 +62,7 @@
                     <tbody>
                         {% for doc in docs %}
                             <tr>
-                                <td> {{ doc['name'] }} </td>
+                                <td> <a href={{ url_for('info_page', name=doc['name']) }}> {{ doc['name'] }} </a> </td>
                                 {% for field in fields %}
                                         <td></td>
                                         <td> {{ doc.setdefault('%s_%s' % (field, 'hour'), 0.0) }} </td>

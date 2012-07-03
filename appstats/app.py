@@ -1,7 +1,10 @@
 # encoding: utf-8
 
+import datetime
+from time import mktime
 from os.path import expanduser
 
+import pytz
 import redis
 from flask import Flask, render_template, request
 from pymongo import Connection, DESCENDING
@@ -84,6 +87,33 @@ def main_page():
                            sort_by_field=sort_by_field,
                            sort_by_period=sort_by_period,
                            number_of_lines=number_of_lines)
+
+
+@app.route('/info/')
+def info_page():
+    name = request.args.get('name')
+    field = request.args.get('field', fields[0])
+    hours = request.args.get('hours', 6, int)
+    # Starting datetime of needed data
+    starting_from = datetime.datetime.utcnow() - datetime.timedelta(hours=hours)
+    docs = mongo_db.appstats_hourly.find({'name': name,
+                                          'date': {'$gt': starting_from}})
+    docs = docs.sort('date')
+    tz = pytz.timezone('Europe/Kiev')
+    data = []
+    # If docs is empty, we will return zero value on current datime.
+    if docs.count() == 0:
+        date = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
+        date = date.astimezone(tz)
+        data = [[mktime(date.timetuple()) * 1000, 0]]
+    # For each doc localize date, transform timestamp from seconds to
+    # milliseconds and append list [data, value] to data
+    for doc in docs:
+        date = doc['date'].replace(tzinfo=pytz.utc)
+        date = date.astimezone(tz)
+        data.append([mktime(date.timetuple()) * 1000, doc[field]])
+    return render_template('info_page.html', data=data, name=name,
+                           selected_field=field, fields=fields, hours=hours)
 
 
 @app.route('/add/', methods=['POST'])
