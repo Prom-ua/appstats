@@ -6,23 +6,15 @@
         <link rel=stylesheet type=text/css href="{{ url_for('static', filename='css/bootstrap.css') }}">
     </head>
     <body>
-        <p class=pull-right>
-            {% if number_of_lines != 20 %}
-                <a href="{{ url_for('main_page', sort_by_field=sort_by_field, sort_by_period=sort_by_period, number_of_lines=20) }}"> [20] </a>
-            {% else %}
-                [20]
-            {% endif %}
-            {% if number_of_lines != 50 %}
-                <a href="{{ url_for('main_page', sort_by_field=sort_by_field, sort_by_period=sort_by_period, number_of_lines=50) }}"> [50] </a>
-            {% else %}
-                [50]
-            {% endif %}
-            {% if number_of_lines != 100 %}
-                <a href="{{ url_for('main_page', sort_by_field=sort_by_field, sort_by_period=sort_by_period, number_of_lines=100)}}"> [100] </a>
-            {% else %}
-                [100]
-            {% endif %}
-        </p>
+        <form class=pull-right>
+            <input name='sort_by_field' type='hidden' value='{{ sort_by_field }}'/>
+            <input name='sort_by_period' type='hidden' value='{{ sort_by_period }}'/>
+            <span class='btn-group' data-toggle='buttons-radio'>
+                <button name='number_of_lines' value=20 class="btn {{ 'active' if number_of_lines == 20 else ''}}">20</button>
+                <button name='number_of_lines' value=50 class="btn {{ 'active' if number_of_lines == 50 else ''}}">50</button>
+                <button name='number_of_lines' value=100 class="btn {{ 'active' if number_of_lines == 100 else ''}}">100</button>
+            </span>
+        </form>
         {% block body %}
             <table class="table table-bordered table-striped table-condensed">
                 <thead>
