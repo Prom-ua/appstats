@@ -22,7 +22,7 @@
                     <option {{ 'selected' if field == selected_field else ''}}> {{ field }} </option>
                 {% endfor %}
             </select>
-            <input name='name' type='text' value='{{ name }}' class='invisible'/>
+            <input name='name' type=hidden value='{{ name }}'/>
         </form>
         <div style='height: 400px; ' id='graph'></div>
 
