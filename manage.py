@@ -1,11 +1,34 @@
 # encoding: utf-8
 
+from datetime import datetime, timedelta
+
 from flaskext.script import Manager
 
-from appstats.app import app, last_hour_counter, last_day_counter, counters, mongo_db
+from appstats.app import (app, last_hour_counter, last_day_counter, counters,
+    mongo_db, redis_db, REDIS_PREFIX
+)
 
 
 manager = Manager(app)
+
+
+@manager.command
+def strip_db():
+    max_age = 182 # Half-year
+    oldest_date = datetime.utcnow() - timedelta(max_age)
+    docs = mongo_db.appstats_hourly.find({'date': {'$lt': oldest_date}})
+    mongo_db.appstats_hourly.remove(docs)
+
+
+@manager.command
+def clear():
+    # Flush all redis records with appstats prefix
+    keys = redis_db.keys('%s*' % REDIS_PREFIX)
+    redis_db.delete(*keys)
+    # Drop mongo 'cache' collection
+    mongo_db.drop_collection('appstats_docs')
+    # Drop mongo hourly stats collection
+    mongo_db.drop_collection('appstats_hourly')
 
 
 @manager.command
