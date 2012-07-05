@@ -71,35 +71,33 @@ def add_data(data):
 
 @app.route('/')
 def main_page():
-    kwargs = {}
-    kwargs['fields'] = fields
-    kwargs['sort_by_field'] = request.args.get('sort_by_field', 'NUMBER')
-    kwargs['sort_by_period'] = request.args.get('sort_by_period', 'hour')
-    kwargs['number_of_lines'] = request.args.get('number_of_lines', 20, int)
-    kwargs['selected_field'] = request.args.get('selected_field')
+    sort_by_field = request.args.get('sort_by_field', 'NUMBER')
+    sort_by_period = request.args.get('sort_by_period', 'hour')
+    number_of_lines = request.args.get('number_of_lines', 20, int)
+    selected_field = request.args.get('selected_field')
 
     docs = mongo_db.appstats_docs.find()
-    if kwargs['sort_by_field'] == 'name':
+    if sort_by_field == 'name':
         docs = docs.sort('name')
     else:
-        sort_by = '%s_%s' % (kwargs['sort_by_field'], kwargs['sort_by_period'])
+        sort_by = '%s_%s' % (sort_by_field, sort_by_period)
         docs = docs.sort(sort_by, DESCENDING)
-    kwargs['docs'] = docs.limit(kwargs['number_of_lines'])
+    docs = docs.limit(number_of_lines)
 
-    return render_template('main_page.html', **kwargs)
+    return render_template('main_page.html', sort_by_field=sort_by_field,
+                           fields=fields, sort_by_period=sort_by_period,
+                           number_of_lines=number_of_lines, docs=docs,
+                           selected_field=selected_field)
 
 
 @app.route('/info/')
 def info_page():
-    kwargs = {}
-    kwargs['fields'] = fields
-    kwargs['name'] = request.args.get('name')
-    kwargs['selected_field'] = request.args.get('field', fields[0])
-    kwargs['hours'] = request.args.get('hours', 6, int)
+    name = request.args.get('name')
+    field = request.args.get('field', fields[0])
+    hours = request.args.get('hours', 6, int)
     # Starting datetime of needed data
-    starting_from = datetime.datetime.utcnow() - datetime.timedelta(
-        hours=kwargs['hours'])
-    docs = mongo_db.appstats_hourly.find({'name': kwargs['name'],
+    starting_from = datetime.datetime.utcnow() - datetime.timedelta(hours=hours)
+    docs = mongo_db.appstats_hourly.find({'name': name,
                                           'date': {'$gt': starting_from}})
     docs = docs.sort('date')
     tz = pytz.timezone('Europe/Kiev')
@@ -114,10 +112,10 @@ def info_page():
     for doc in docs:
         date = doc['date'].replace(tzinfo=pytz.utc)
         date = date.astimezone(tz)
-        point = [mktime(date.timetuple()) * 1000, doc[kwargs['selected_field']]]
+        point = [mktime(date.timetuple()) * 1000, doc[field]]
         data.append(point)
-    kwargs['data'] = data
-    return render_template('info_page.html', **kwargs)
+    return render_template('info_page.html', fields=fields, data=data,
+                           name=name, selected_field=field, hours=hours)
 
 
 @app.route('/add/', methods=['POST'])
