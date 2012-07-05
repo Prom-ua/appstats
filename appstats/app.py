@@ -21,7 +21,7 @@ if not app.config.from_envvar('APPSTATS_SETTINGS', silent=True):
 
 fields = app.config['FIELDS'][:]
 if 'NUMBER' not in fields:
-    fields.append('NUMBER')
+    fields.insert(0, 'NUMBER')
 
 redis_db = redis.Redis(host=app.config['REDIS_HOST'],
                        port=app.config['REDIS_PORT'],
