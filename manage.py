@@ -37,7 +37,8 @@ def update():
         counter.update()
 
     hour_data = last_hour_counter.get_vals()
-    day_aver_data = last_day_counter.get_vals()
+    day_data = last_day_counter.get_vals()
+    day_aver_data = {}
     hour_aver_data = {}
 
     # Calculating hour average data
@@ -53,14 +54,16 @@ def update():
         hour_aver_data[name] = h_aver_counts
 
     # Calculating day average data
-    for name, counts in day_aver_data.iteritems():
+    for name, counts in day_data.iteritems():
         req_count = counts['NUMBER']
+        d_aver_counts = {}
         for field in counts:
             if  field == 'NUMBER':
                 req_per_day = float(counts[field]) / last_day_counter.interval
-                counts[field] = round(req_per_day, 2)
+                d_aver_counts[field] = round(req_per_day, 2)
             else:
-                counts[field] = round(float(counts[field]) / req_count, 2)
+                d_aver_counts[field] = round(float(counts[field]) / req_count, 2)
+        day_aver_data[name] = d_aver_counts
 
     # Transforming data into flat form
     docs = []
@@ -73,6 +76,9 @@ def update():
 
             key = '%s_%s' % (field, 'hour_aver')
             doc[key] = hour_aver_data[name][field]
+
+            key = '%s_%s' % (field, 'day')
+            doc[key] = day_data[name][field]
 
             key = '%s_%s' % (field, 'day_aver')
             doc[key] = day_aver_data[name][field]
