@@ -1,5 +1,7 @@
 # encoding: utf-8
 
+from datetime import datetime, timedelta
+
 from flaskext.script import Manager
 
 from appstats.app import (app, last_hour_counter, last_day_counter, counters,
@@ -8,6 +10,14 @@ from appstats.app import (app, last_hour_counter, last_day_counter, counters,
 
 
 manager = Manager(app)
+
+
+@manager.command
+def cleandb():
+    max_age = 182 # Half-year
+    oldest_date = datetime.utcnow() - timedelta(max_age)
+    docs = mongo_db.appstats_hourly.find({'date': {'$lt': oldest_date}})
+    mongo_db.appstats_hourly.remove(docs)
 
 
 @manager.command
