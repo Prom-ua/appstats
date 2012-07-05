@@ -76,6 +76,7 @@ def main_page():
     kwargs['sort_by_field'] = request.args.get('sort_by_field', 'NUMBER')
     kwargs['sort_by_period'] = request.args.get('sort_by_period', 'hour')
     kwargs['number_of_lines'] = request.args.get('number_of_lines', 20, int)
+    kwargs['selected_field'] = request.args.get('selected_field')
 
     docs = mongo_db.appstats_docs.find()
     if kwargs['sort_by_field'] == 'name':
