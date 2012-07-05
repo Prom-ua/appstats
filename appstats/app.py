@@ -74,19 +74,20 @@ def main_page():
     sort_by_field = request.args.get('sort_by_field', 'NUMBER')
     sort_by_period = request.args.get('sort_by_period', 'hour')
     number_of_lines = request.args.get('number_of_lines', 20, int)
+    selected_field = request.args.get('selected_field')
 
     docs = mongo_db.appstats_docs.find()
     if sort_by_field == 'name':
         docs = docs.sort('name')
     else:
-        docs = docs.sort('%s_%s' % (sort_by_field, sort_by_period), DESCENDING)
+        sort_by = '%s_%s' % (sort_by_field, sort_by_period)
+        docs = docs.sort(sort_by, DESCENDING)
     docs = docs.limit(number_of_lines)
 
-    return render_template('main_page.html', docs=docs,
-                           fields=last_hour_counter.fields,
-                           sort_by_field=sort_by_field,
-                           sort_by_period=sort_by_period,
-                           number_of_lines=number_of_lines)
+    return render_template('main_page.html', sort_by_field=sort_by_field,
+                           fields=fields, sort_by_period=sort_by_period,
+                           number_of_lines=number_of_lines, docs=docs,
+                           selected_field=selected_field)
 
 
 @app.route('/info/')
@@ -111,9 +112,10 @@ def info_page():
     for doc in docs:
         date = doc['date'].replace(tzinfo=pytz.utc)
         date = date.astimezone(tz)
-        data.append([mktime(date.timetuple()) * 1000, doc[field]])
-    return render_template('info_page.html', data=data, name=name,
-                           selected_field=field, fields=fields, hours=hours)
+        point = [mktime(date.timetuple()) * 1000, doc[field]]
+        data.append(point)
+    return render_template('info_page.html', fields=fields, data=data,
+                           name=name, selected_field=field, hours=hours)
 
 
 @app.route('/add/', methods=['POST'])
