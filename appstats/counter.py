@@ -1,8 +1,7 @@
 # encoding: utf-8
 
-import datetime
-from time import time
 from calendar import timegm
+from datetime import datetime, timedelta, time
 
 
 class RollingCounter(object):
@@ -42,6 +41,7 @@ class RollingCounter(object):
     def update(self):
         names = self._get_names()
         pl = self.db.pipeline()
+        now = timegm(datetime.utcnow().utctimetuple())
         for name in names:
             for field in self.fields:
                 key = self._make_key(self.key_format, name=name, field=field)
@@ -53,11 +53,11 @@ class RollingCounter(object):
                 if self.db.llen(key) == 0:
                     for i in xrange(self.interval / self.part - 1):
                         self.db.rpush(key, 0)
-                    self.db.set(updated_key, time())
+                    self.db.set(updated_key, now)
 
                 updated = float(self.db.get(updated_key))
                 last_val = int(self.db.get(last_val_key) or '0')
-                passed_time = time() - updated
+                passed_time = now - updated
 
                 # Check whether it is need to be updated
                 if passed_time > self.part:
@@ -76,7 +76,7 @@ class RollingCounter(object):
 
                     # Evaluating time correction
                     rest_time = passed_time - num_of_new_parts * self.part
-                    pl.set(updated_key, time() - rest_time)
+                    pl.set(updated_key, now - rest_time)
         pl.execute()
 
     def get_vals(self, names=None):
@@ -162,15 +162,15 @@ class HourlyCounter(object):
         prev_upd = self.redis_db.get(prev_upd_key)
 
         # Get current datetime rounded to hour
-        now = datetime.datetime.utcnow()
-        now = datetime.datetime.combine(now.date(), datetime.time(now.hour))
+        now = datetime.utcnow()
+        now = datetime.combine(now.date(), time(now.hour))
         if prev_upd:
             prev_upd = int(prev_upd) # Get previous timestamp
-            prev_upd = datetime.datetime.utcfromtimestamp(prev_upd)
+            prev_upd = datetime.utcfromtimestamp(prev_upd)
         else:
             # If there isn't prev_upd in redis,
             # we will use 'one hour before current time' variable instead
-            prev_upd = now - datetime.timedelta(hours=1)
+            prev_upd = now - timedelta(hours=1)
             # Get unix timestamp
             prev_upd_unix = timegm(prev_upd.utctimetuple())
             self.redis_db.set(prev_upd_key, prev_upd_unix)
@@ -191,7 +191,7 @@ class HourlyCounter(object):
                 # For each passed hour add separate doc with the specific date
                 docs = []
                 for offset in xrange(passed_hours):
-                    date = now - datetime.timedelta(hours=offset)
+                    date = now - timedelta(hours=offset)
                     doc['date'] = date
                     docs.append(doc.copy())
                 # New val = rest
