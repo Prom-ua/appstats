@@ -1,134 +1,117 @@
-<!doctype html>
-<html>
-    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
-    <head>
-        <title>Statistics</title>
-        <link rel=stylesheet type=text/css href="{{ url_for('static', filename='css/bootstrap.css') }}">
-    </head>
-    <body>
-        <form class=pull-right>
-            <input name='sort_by_field' type='hidden' value='{{ sort_by_field }}'/>
-            <input name='sort_by_period' type='hidden' value='{{ sort_by_period }}'/>
-            <input name='selected_field' type='hidden' value='{{ selected_field }}'/>
-            <span class='btn-group' data-toggle='buttons-radio'>
-                <button name='number_of_lines' value=20 class="btn {{ 'active' if number_of_lines == 20 else ''}}">20</button>
-                <button name='number_of_lines' value=50 class="btn {{ 'active' if number_of_lines == 50 else ''}}">50</button>
-                <button name='number_of_lines' value=100 class="btn {{ 'active' if number_of_lines == 100 else ''}}">100</button>
-            </span>
-        </form>
-        {% block body %}
-            <table class="table table-bordered table-striped table-condensed">
-                <thead>
-                    <tr>
-                        {% if sort_by_field == 'name' %}
-                            <th> name </th>
-                        {% else %}
-                            <th> <a href="{{ url_for(
-                                'main_page',
-                                sort_by_field='name',
-                                sort_by_period='hour',
-                                number_of_lines=number_of_lines,
-                                selected_field=selected_field) }}"> 
-                                    name 
-                                </a> 
-                            </th>
-                        {% endif %}
-                        {% for field in fields %}
-                            {% if field == selected_field %}
-                                <th COLSPAN=4> {{ field }} </th>
+{% extends "layout.html" %}
+{% block body %}
+    <form class="pull-right">
+       <input name="sort_by_field" type="hidden" value="{{ sort_by_field }}"/>
+        <input name="sort_by_period" type="hidden" value="{{ sort_by_period }}"/>
+        <input name="selected_field" type="hidden" value="{{ selected_field }}"/>
+        <span class="btn-group" data-toggle="buttons-radio">
+            <button name="number_of_lines" value="20" class="btn {{ 'active' if number_of_lines == 20 else ''}}">20</button>
+            <button name="number_of_lines" value="50" class="btn {{ 'active' if number_of_lines == 50 else ''}}">50</button>
+            <button name="number_of_lines" value="100" class="btn {{ 'active' if number_of_lines == 100 else ''}}">100</button>
+        </span>
+    </form>
+    <table class="table table-bordered table-striped table-condensed">
+        <thead>
+            <tr>
+                {% if sort_by_field == 'name' %}
+                    <th> name </th>
+                {% else %}
+                    <th> <a href="{{ url_for('main_page', sort_by_field='name',
+                                             sort_by_period='hour',
+                                             number_of_lines=number_of_lines,
+                                             selected_field=selected_field) }}">
+                            name
+                        </a>
+                    </th>
+                {% endif %}
+                {% for field in fields %}
+                    {% if field == selected_field %}
+                        <th COLSPAN="4"> {{ field }} </th>
+                    {% else %}
+                        <th><a href="{{ url_for('main_page',
+                                                sort_by_field=sort_by_field,
+                                                sort_by_period=sort_by_period,
+                                                number_of_lines=number_of_lines,
+                                                selected_field=field) }}">
+                                {{ field }}
+                            </a>
+                        </th>
+                    {% endif %}
+                {% endfor %}
+            </tr>
+        </thead>
+            <tbody>
+                <tr>
+                    <td> </td>
+                    {% for field in fields %}
+                    {% if field == sort_by_field and sort_by_period == 'hour_aver' %}
+                                <td> &ltH&gt </td>
                             {% else %}
-                                <th><a href={{ url_for(
-                                        'main_page',
-                                        sort_by_field=sort_by_field,
-                                        sort_by_period=sort_by_period,
-                                        number_of_lines=number_of_lines,
-                                        selected_field=field) }}>
-                                            {{ field }}
+                                <td><a href="{{ url_for('main_page',
+                                                        sort_by_field=field,
+                                                        sort_by_period='hour_aver',
+                                                        number_of_lines=number_of_lines,
+                                                        selected_field=selected_field) }}">
+                                        &ltH&gt
                                     </a>
-                                </th>
+                                </td>
                             {% endif %}
+
+                            {% if field == selected_field %}
+                                {% if field == sort_by_field and sort_by_period == 'day_aver' %}
+                                    <td> &ltD&gt </td>
+                                {% else %}
+                                    <td><a href="{{ url_for('main_page',
+                                                            sort_by_field=field,
+                                                            sort_by_period='day_aver',
+                                                            number_of_lines=number_of_lines,
+                                                            selected_field=selected_field) }}">
+                                            &ltD&gt
+                                        </a>
+                                    </td>
+                                {% endif %}
+
+                                {% if field == sort_by_field and sort_by_period == 'hour' %}
+                                    <td> H </td>
+                                {% else %}
+                                    <td><a href="{{ url_for('main_page',
+                                                            sort_by_field=field,
+                                                            sort_by_period='hour',
+                                                            number_of_lines=number_of_lines,
+                                                            selected_field=selected_field) }}">
+                                            H
+                                        </a>
+                                    </td>
+                                {% endif %}
+
+                                {% if field == sort_by_field and sort_by_period == 'day' %}
+                                    <td> D </td>
+                                {% else %}
+                                    <td><a href="{{ url_for('main_page',
+                                                            sort_by_field=field,
+                                                            sort_by_period='day',
+                                                            number_of_lines=number_of_lines,
+                                                            selected_field=selected_field) }}">
+                                            D
+                                        </a>
+                                    </td>
+                                {% endif %}
+                            {% endif %}
+                    {% endfor %}
+                </tr>
+                {% for doc in docs %}
+                    <tr>
+                        <td> <a href="{{ url_for('info_page', name=doc['name']) }}"> {{ doc['name'] }} </a> </td>
+                        {% for field in fields %}
+                                <td> {{ doc.setdefault('%s_%s' % (field, 'hour_aver'), 0.0) }} </td>
+                                {% if field == selected_field %}
+                                    <td> {{ doc.setdefault('%s_%s' % (field, 'day_aver'), 0.0) }} </td>
+                                    <td> {{ doc.setdefault('%s_%s' % (field, 'hour'), 0.0) }} </td>
+                                    <td> {{ doc.setdefault('%s_%s' % (field, 'day'), 0.0) }} </td>
+                                {% endif %}
                         {% endfor %}
                     </tr>
-                </thead>
-                    <tbody>
-                        <tr>
-                            <td> </td>
-                            {% for field in fields %}
-                                    {% if field == sort_by_field and sort_by_period == 'hour_aver' %}
-                                        <td> &ltH&gt </td>
-                                    {% else %}
-                                        <td><a href="{{ url_for(
-                                                'main_page',
-                                                sort_by_field=field,
-                                                sort_by_period='hour_aver',
-                                                number_of_lines=number_of_lines,
-                                                selected_field=selected_field) }}">
-                                                    &ltH&gt 
-                                            </a>
-                                        </td>
-                                    {% endif %}
-
-                                    {% if field == selected_field %}
-                                        {% if field == sort_by_field and sort_by_period == 'day_aver' %}
-                                            <td> &ltD&gt </td>
-                                        {% else %}
-                                            <td><a href="{{ url_for('main_page',
-                                                    sort_by_field=field,
-                                                    sort_by_period='day_aver',
-                                                    number_of_lines=number_of_lines,
-                                                    selected_field=selected_field) }}">
-                                                        &ltD&gt 
-                                                </a>
-                                            </td>
-                                        {% endif %}
-
-                                        {% if field == sort_by_field and sort_by_period == 'hour' %}
-                                            <td> H </td>
-                                        {% else %}
-                                            <td><a href="{{ url_for(
-                                                    'main_page',
-                                                    sort_by_field=field,
-                                                    sort_by_period='hour',
-                                                    number_of_lines=number_of_lines,
-                                                    selected_field=selected_field) }}">
-                                                        H 
-                                                </a>
-                                            </td>
-                                        {% endif %}
-
-                                        {% if field == sort_by_field and sort_by_period == 'day' %}
-                                            <td> D </td>
-                                        {% else %}
-                                            <td><a href="{{ url_for('main_page',
-                                                    sort_by_field=field,
-                                                    sort_by_period='day',
-                                                    number_of_lines=number_of_lines,
-                                                    selected_field=selected_field) }}">
-                                                        D 
-                                                </a>
-                                            </td>
-                                        {% endif %}
-                                    {% endif %}
-                            {% endfor %}
-                        </tr>
-                        {% for doc in docs %}
-                            <tr>
-                                <td> <a href={{ url_for('info_page', name=doc['name']) }}> {{ doc['name'] }} </a> </td>
-                                {% for field in fields %}
-                                        <td> {{ doc.setdefault('%s_%s' % (field, 'hour_aver'), 0.0) }} </td>
-                                        {% if field == selected_field %}
-                                            <td> {{ doc.setdefault('%s_%s' % (field, 'day_aver'), 0.0) }} </td>
-                                            <td> {{ doc.setdefault('%s_%s' % (field, 'hour'), 0.0) }} </td>
-                                            <td> {{ doc.setdefault('%s_%s' % (field, 'day'), 0.0) }} </td>
-                                        {% endif %}
-                                {% endfor %}
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-            </table>
-        {% endblock %}
-        <script src="{{ url_for('static', filename='js/bootstrap.js') }}"></script>
-    </body>
-</html>
-
-
+                {% endfor %}
+            </tbody>
+    </table>
+{% endblock %}

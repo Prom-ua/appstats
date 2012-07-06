@@ -1,0 +1,12 @@
+<!doctype html>
+<html>
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <head>
+        <title>Statistics</title>
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/bootstrap.css') }}">
+    </head>
+    <body>
+        {% block body %}{% endblock %}
+        <script src="{{ url_for('static', filename='js/bootstrap.js') }}"></script>
+    </body>
+</html>
