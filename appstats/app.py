@@ -90,9 +90,8 @@ def main_page():
                            selected_field=selected_field)
 
 
-@app.route('/info/')
-def info_page():
-    name = request.args.get('name')
+@app.route('/info/<name>')
+def info_page(name):
     field = request.args.get('field', fields[0])
     hours = request.args.get('hours', 6, int)
     # Starting datetime of needed data

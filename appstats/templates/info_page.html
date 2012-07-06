@@ -15,7 +15,6 @@
                 <option {{ 'selected' if field == selected_field else ''}}> {{ field }} </option>
             {% endfor %}
         </select>
-        <input name="name" type="hidden" value="{{ name }}"/>
     </form>
     <div style="height: 400px;" id="graph"></div>
 
@@ -24,7 +23,7 @@
             field = $('select[name="field"]').val();
             hours = $('button[name="hours"].active').val();
             document.location.href="{{ url_for('info_page', name=name)}}" +
-            '&' + $.param([
+            '?' + $.param([
                 {name : 'field', value : field},
                 {name : 'hours', value : hours}
             ])
