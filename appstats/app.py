@@ -10,7 +10,7 @@ from flask import Flask, render_template, request
 from pymongo import Connection, DESCENDING
 from werkzeug.wsgi import ClosingIterator
 
-from .counter import RollingCounter, HourlyCounter
+from .counter import RollingCounter, PeriodicCounter
 
 
 app = Flask(__name__)
@@ -40,10 +40,11 @@ last_day_counter = RollingCounter(db=redis_db, fields=fields,
                                   redis_prefix=REDIS_PREFIX, interval=86400,
                                   part=3600)
 
-hourly_counter = HourlyCounter(redis_db=redis_db, mongo_db=mongo_db,
-                               fields=fields, redis_prefix=REDIS_PREFIX)
+periodic_counter = PeriodicCounter(divider=6, redis_db=redis_db,
+                                   mongo_db=mongo_db, fields=fields,
+                                   redis_prefix=REDIS_PREFIX)
 
-counters = [last_hour_counter, last_day_counter, hourly_counter]
+counters = [last_hour_counter, last_day_counter, periodic_counter]
 
 
 def add_data_middleware(wsgi_app):
@@ -97,8 +98,8 @@ def info_page():
     hours = request.args.get('hours', 6, int)
     # Starting datetime of needed data
     starting_from = datetime.datetime.utcnow() - datetime.timedelta(hours=hours)
-    docs = mongo_db.appstats_hourly.find({'name': name,
-                                          'date': {'$gt': starting_from}})
+    docs = periodic_counter.collection.find({'name': name,
+                                             'date': {'$gt': starting_from}})
     docs = docs.sort('date')
     tz = pytz.timezone('Europe/Kiev')
     data = []

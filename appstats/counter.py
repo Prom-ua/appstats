@@ -116,20 +116,31 @@ class RollingCounter(object):
         self.db.incr(last_val_key, int(increment))
 
 
-class HourlyCounter(object):
+class PeriodicCounter(object):
     """
-    The HourlyCounter stores data, accumulated during strict hours intervals.
-    E.g. data that came from 00:00 to 00:59.
+    The PeriodicCounter stores data, accumulated during strict intervals.
+    E.g. if divider = 1, counter stores data that came from 00:00 to 00:59.
+
+    Parameters:
+      - 'divider' -- hour divider, specifies interval. E.g. if divider = 3,
+      interval = 60 / 3 = 20 minutes. 1 <= divider <= 60
+      - 'redis_db' -- redis db instance to temporary accamulate information in
+      - 'mongo_db' -- mongo db instance to store statistics in
+      - 'fields' -- list of fields names to track of
+      - 'redis_prefix' -- prefix used in each redis key to separate statistics
+      data
     """
 
-    key_format = '%(prefix)s,hourly,%(name)s,%(field)s'
-    prev_upd_key_format = '%(prefix)s,hourly,prev_upd'
+    key_format = '%(prefix)s,periodic,%(divider)s,%(name)s,%(field)s'
+    prev_upd_key_format = '%(prefix)s,periodic,%(divider)s,prev_upd'
 
-    def __init__(self, redis_db, mongo_db, fields, redis_prefix):
+    def __init__(self, divider, redis_db, mongo_db, fields, redis_prefix):
         self.redis_db = redis_db
         self.fields = fields
-        self.collection = mongo_db.appstats_hourly
+        self.collection = mongo_db['appstats_periodic-%u' % divider]
         self.prefix = redis_prefix
+        self.divider = divider
+        self._interval = 60 / divider
 
     def _get_names(self):
         names = []
@@ -137,14 +148,14 @@ class HourlyCounter(object):
                                     field='*')
         for key in self.redis_db.keys(search_key):
             # Example key format:
-            # appstats,hourly,path.to.module:Class.method,CPU
-            prefix, _, name, field = key.split(',')
+            # appstats,periodic,6,path.to.module:Class.method,CPU
+            prefix, periodic, divider, name, field = key.split(',')
             if name not in names:
                 names.append(name)
         return names
 
     def _make_key(self, key_format, **kwargs):
-        kwargs.update(prefix=self.prefix)
+        kwargs.update(prefix=self.prefix, divider=self.divider)
         return key_format % kwargs
 
     def incrby(self, name, field, increment):
@@ -161,22 +172,25 @@ class HourlyCounter(object):
         prev_upd_key = self._make_key(self.prev_upd_key_format)
         prev_upd = self.redis_db.get(prev_upd_key)
 
-        # Get current datetime rounded to hour
+        # Get current datetime rounded to interval
         now = datetime.utcnow()
-        now = datetime.combine(now.date(), time(now.hour))
+        new_time = time(hour=now.hour,
+                        minute=(now.minute / self._interval * self._interval))
+        now = datetime.combine(now.date(), new_time)
         if prev_upd:
             prev_upd = int(prev_upd) # Get previous timestamp
             prev_upd = datetime.utcfromtimestamp(prev_upd)
         else:
             # If there isn't prev_upd in redis,
-            # we will use 'one hour before current time' variable instead
-            prev_upd = now - timedelta(hours=1)
+            # we will use 'one interval before current time' variable instead
+            prev_upd = now - timedelta(minutes=self._interval)
             # Get unix timestamp
             prev_upd_unix = timegm(prev_upd.utctimetuple())
             self.redis_db.set(prev_upd_key, prev_upd_unix)
         delta = now - prev_upd
-        passed_hours = delta.days * 24 + delta.seconds / 3600
-        if passed_hours == 0:
+        # 24 * 60 = 1440
+        passed_intervals = (delta.days * 1440 + delta.seconds / 60) / self._interval
+        if passed_intervals == 0:
             # Too early, exiting
             return
         names = self._get_names()
@@ -185,17 +199,18 @@ class HourlyCounter(object):
             for field in self.fields:
                 key = self._make_key(self.key_format, name=name, field=field)
                 val = int(self.redis_db.get(key) or '0')
-                val_per_hour = val / passed_hours
-                doc[field] = val_per_hour
+                val_per_interval = val / passed_intervals
+                doc[field] = val_per_interval
 
-                # For each passed hour add separate doc with the specific date
+                # For each passed interval add separate doc with the specific date
                 docs = []
-                for offset in xrange(passed_hours):
-                    date = now - timedelta(hours=offset)
+                for offset_scale in xrange(passed_intervals):
+                    offset = self._interval * offset_scale
+                    date = now - timedelta(minutes=offset)
                     doc['date'] = date
                     docs.append(doc.copy())
                 # New val = rest
-                val -= passed_hours * val_per_hour
+                val -= passed_intervals * val_per_interval
                 self.redis_db.set(key, val)
             self.collection.insert(docs)
         prev_upd = timegm(now.utctimetuple())
