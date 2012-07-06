@@ -8,6 +8,14 @@ class RollingCounter(object):
     """
     The rolling counter, which stores data only
     for the specified time interval.
+
+    Parameters:
+      - 'db' -- redis db instance to accumulate statistics data in
+      - 'fields' -- list of fields names to track of
+      - 'redis_prefix' -- prefix used in each redis key to separate statistics
+      data
+      - 'interval' -- interval during which the counter stores the data
+      - 'part' -- accuracy indicator, number of parts interval will split
     """
 
     last_val_key_format = '%(prefix)s,%(name)s,%(interval)s,%(part)s,last_val,%(field)s'
@@ -124,7 +132,7 @@ class PeriodicCounter(object):
     Parameters:
       - 'divider' -- hour divider, specifies interval. E.g. if divider = 3,
       interval = 60 / 3 = 20 minutes. 1 <= divider <= 60
-      - 'redis_db' -- redis db instance to temporary accamulate information in
+      - 'redis_db' -- redis db instance to temporary accumulate information in
       - 'mongo_db' -- mongo db instance to store statistics in
       - 'fields' -- list of fields names to track of
       - 'redis_prefix' -- prefix used in each redis key to separate statistics
