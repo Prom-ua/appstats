@@ -9,4 +9,10 @@ MONGO_HOST = '127.0.0.1'
 MONGO_PORT = 27017
 MONGO_DB_NAME = 'appstats'
 
-FIELDS = ['cpu_time', 'real_time', 'sql', 'solr', 'redis', 'memcached']
+# FIELDS = [{'key': 'example', 'name': 'EXAMPLE', 'format': 'time'}]
+FIELDS = [dict(key='cpu_time', name='CPU', format='time'),
+          dict(key='real_time', name='TOTAL', format='time'),
+          dict(key='sql', name='SQL', format=None),
+          dict(key='solr', name='SOLR', foramt=None),
+          dict(key='redis', name='REDIS', format=None),
+          dict(key='memcached', name='MEMCACHED', format=None)]

@@ -20,8 +20,9 @@ if not app.config.from_envvar('APPSTATS_SETTINGS', silent=True):
     app.config.from_pyfile(expanduser('~/.appstats.cfg'), silent=True)
 
 fields = app.config['FIELDS'][:]
-if 'NUMBER' not in fields:
-    fields.insert(0, 'NUMBER')
+if 'NUMBER' not in [field['key'] for field in fields]:
+    fields.insert(0, dict(key='NUMBER', name='NUMBER', format=None))
+fields_keys = [field['key'] for field in fields]
 
 redis_db = redis.Redis(host=app.config['REDIS_HOST'],
                        port=app.config['REDIS_PORT'],
@@ -33,19 +34,18 @@ mongo_conn = Connection(host=app.config['MONGO_HOST'],
                         _connect=False)
 mongo_db = mongo_conn[app.config['MONGO_DB_NAME']]
 
-last_hour_counter = RollingCounter(db=redis_db, fields=fields,
+last_hour_counter = RollingCounter(db=redis_db, fields=fields_keys,
                                    redis_prefix=REDIS_PREFIX)
 
-last_day_counter = RollingCounter(db=redis_db, fields=fields,
+last_day_counter = RollingCounter(db=redis_db, fields=fields_keys,
                                   redis_prefix=REDIS_PREFIX, interval=86400,
                                   part=3600)
 
 periodic_counter = PeriodicCounter(divider=6, redis_db=redis_db,
-                                   mongo_db=mongo_db, fields=fields,
+                                   mongo_db=mongo_db, fields=fields_keys,
                                    redis_prefix=REDIS_PREFIX)
 
 counters = [last_hour_counter, last_day_counter, periodic_counter]
-
 
 def add_data_middleware(wsgi_app):
     def inner(environ, start_response):
@@ -93,7 +93,7 @@ def main_page():
 
 @app.route('/info/<name>')
 def info_page(name):
-    field = request.args.get('field', fields[0])
+    field = request.args.get('field', 'NUMBER')
     hours = request.args.get('hours', 6, int)
     # Starting datetime of needed data
     starting_from = datetime.datetime.utcnow() - datetime.timedelta(hours=hours)

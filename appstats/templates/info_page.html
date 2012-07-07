@@ -12,7 +12,7 @@
         </span>
         <select name="field" onchange="_submit()">
             {% for field in fields %}
-                <option {{ 'selected' if field == selected_field else ''}}> {{ field }} </option>
+                <option {{ 'selected' if field['key'] == selected_field else ''}} value="{{ field['key'] }}"> {{ field['name'] }} </option>
             {% endfor %}
         </select>
     </form>
