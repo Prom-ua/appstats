@@ -1,9 +1,24 @@
 {% extends "layout.html" %}
 {% block body %}
+    <ul class="nav nav-tabs">
+        {% for site in sites %}
+            <li class={{"active" if site == selected_site else "" }}>
+                <a href="{{ url_for('main_page',
+                                    sort_by_field=sort_by_field,
+                                    sort_by_period=sort_by_period,
+                                    number_of_lines=number_of_lines,
+                                    selected_field=selected_field,
+                                    selected_site=site) }}">
+                    {{ site }}
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
     <form class="pull-right">
        <input name="sort_by_field" type="hidden" value="{{ sort_by_field }}"/>
         <input name="sort_by_period" type="hidden" value="{{ sort_by_period }}"/>
         <input name="selected_field" type="hidden" value="{{ selected_field }}"/>
+        <input name="selected_site" type="hidden" value="{{ selected_site }}"/>
         <span class="btn-group" data-toggle="buttons-radio">
             <button name="number_of_lines" value="20" class="btn {{ 'active' if number_of_lines == 20 else ''}}">20</button>
             <button name="number_of_lines" value="50" class="btn {{ 'active' if number_of_lines == 50 else ''}}">50</button>
@@ -32,7 +47,8 @@
                                                 sort_by_field=sort_by_field,
                                                 sort_by_period=sort_by_period,
                                                 number_of_lines=number_of_lines,
-                                                selected_field=field['key']) }}">
+                                                selected_field=field['key'],
+                                                selected_site=selected_site) }}">
                                 {{ field['name'] }}
                             </a>
                         </th>
@@ -51,7 +67,8 @@
                                                         sort_by_field=field['key'],
                                                         sort_by_period='hour_aver',
                                                         number_of_lines=number_of_lines,
-                                                        selected_field=selected_field) }}">
+                                                        selected_field=selected_field,
+                                                        selected_site=selected_site) }}">
                                         &ltH&gt
                                     </a>
                                 </td>
@@ -65,7 +82,8 @@
                                                             sort_by_field=field['key'],
                                                             sort_by_period='day_aver',
                                                             number_of_lines=number_of_lines,
-                                                            selected_field=selected_field) }}">
+                                                            selected_field=selected_field,
+                                                            selected_site=selected_site) }}">
                                             &ltD&gt
                                         </a>
                                     </td>
@@ -78,7 +96,8 @@
                                                             sort_by_field=field['key'],
                                                             sort_by_period='hour',
                                                             number_of_lines=number_of_lines,
-                                                            selected_field=selected_field) }}">
+                                                            selected_field=selected_field,
+                                                            selected_site=selected_site) }}">
                                             H
                                         </a>
                                     </td>
@@ -91,7 +110,8 @@
                                                             sort_by_field=field['key'],
                                                             sort_by_period='day',
                                                             number_of_lines=number_of_lines,
-                                                            selected_field=selected_field) }}">
+                                                            selected_field=selected_field,
+                                                            selected_site=selected_site) }}">
                                             D
                                         </a>
                                     </td>

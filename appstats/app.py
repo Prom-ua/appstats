@@ -123,8 +123,10 @@ def main_page():
     sort_by_period = request.args.get('sort_by_period', 'hour')
     number_of_lines = request.args.get('number_of_lines', 20, int)
     selected_field = request.args.get('selected_field', 'NUMBER')
+    site = request.args.get('selected_site', 'prom.ua')
+    sites = mongo_db.appstats_docs.distinct('site')
 
-    docs = mongo_db.appstats_docs.find()
+    docs = mongo_db.appstats_docs.find({'site': site})
     if sort_by_field == 'name':
         docs = docs.sort('name')
     else:
@@ -135,17 +137,21 @@ def main_page():
     return render_template('main_page.html', sort_by_field=sort_by_field,
                            fields=fields, sort_by_period=sort_by_period,
                            number_of_lines=number_of_lines, docs=docs,
-                           selected_field=selected_field)
+                           selected_field=selected_field, sites=sites,
+                           selected_site=site)
 
 
 @app.route('/info/<name>')
 def info_page(name):
-    field = request.args.get('field', 'NUMBER')
+    field = request.args.get('selected_field', 'NUMBER')
     hours = request.args.get('hours', 6, int)
+    site = request.args.get('selected_site', 'prom.ua')
+    sites = periodic_counter.collection.distinct('site')
     # Starting datetime of needed data
     starting_from = datetime.datetime.utcnow() - datetime.timedelta(hours=hours)
     docs = periodic_counter.collection.find({'name': name,
-                                             'date': {'$gt': starting_from}})
+                                             'date': {'$gt': starting_from},
+                                             'site': site})
     docs = docs.sort('date')
     tz = pytz.timezone('Europe/Kiev')
     data = []
@@ -162,7 +168,8 @@ def info_page(name):
         point = [mktime(date.timetuple()) * 1000, doc[field]]
         data.append(point)
     return render_template('info_page.html', fields=fields, data=data,
-                           name=name, selected_field=field, hours=hours)
+                           name=name, selected_field=field, hours=hours,
+                           selected_site=site, sites=sites)
 
 
 @app.route('/add/', methods=['POST'])

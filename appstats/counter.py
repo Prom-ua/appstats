@@ -203,7 +203,13 @@ class PeriodicCounter(object):
             return
         names = self._get_names()
         for name in names:
-            doc = dict(name=name)
+            # Trying to get site, separated by @ from the name
+            if len(name.split('@')) == 2:
+                site, short_name = name.split('@')
+            else:
+                short_name = name
+                site = 'prom.ua' # if site isn't specified, take default one
+            doc = dict(name=short_name, site=site)
             for field in self.fields:
                 key = self._make_key(self.key_format, name=name, field=field)
                 val = int(self.redis_db.get(key) or '0')

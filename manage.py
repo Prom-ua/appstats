@@ -68,8 +68,13 @@ def update():
     # Transforming data into flat form
     docs = []
     for name in hour_data:
-        doc = {}
-        doc['name'] = name
+        # Trying to get site, separated by @ from the name
+        if len(name.split('@')) == 2:
+            site, short_name = name.split('@')
+        else:
+            short_name = name
+            site = 'prom.ua' # if site isn't specified, take default one
+        doc = dict(name=short_name, site=site)
         for field in last_hour_counter.fields:
             key = '%s_%s' % (field, 'hour')
             doc[key] = hour_data[name][field]
