@@ -47,6 +47,53 @@ periodic_counter = PeriodicCounter(divider=6, redis_db=redis_db,
 
 counters = [last_hour_counter, last_day_counter, periodic_counter]
 
+
+@app.template_filter()
+def count_format(value):
+    count = float(value)
+    base = 1000
+    prefixes = [
+        ('K'),
+        ('M'),
+        ('G'),
+        ('T'),
+        ('P'),
+        ('E'),
+        ('Z'),
+        ('Y')
+    ]
+    if count < base:
+        return '%.1f' % count
+    else:
+        for i, prefix in enumerate(prefixes):
+            unit = base ** (i + 2)
+            if count < unit:
+                return '%.1f %s' % ((base * count / unit), prefix)
+        return '%.1f %s' % ((base * count / unit), prefix)
+
+
+@app.template_filter()
+def time_format(value):
+    time = float(value)
+    if time < 1000:
+        return '%.1f ms' % time
+    else:
+        time = time / 1000
+    if time < 60:
+        return '%.1f sec' % time
+    else:
+        time = time / 60
+    if time < 60:
+        return '%.1f min' % time
+    else:
+        time = time / 60
+    if time < 24:
+        return '%.1f hours' % time
+    else:
+        time = time / 24
+        return'%.1f days' % time
+
+
 def add_data_middleware(wsgi_app):
     def inner(environ, start_response):
         iterator = wsgi_app(environ, start_response)
