@@ -6,6 +6,22 @@
         <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/bootstrap.css') }}">
     </head>
     <body>
+        <div class="navbar navbar-fixed-top">
+            <div class=navbar-inner>
+                <div class=container>
+                    <a class="brand" href="{{ url_for('main_page') }}">Appstats</a>
+                    <div class="nav-collapse collapse">
+                        <ul class=nav>
+                            {% for def_app_id in app_ids %}
+                                <li class={{ "active" if def_app_id == app_id else "" }}>
+                                    <a href="{{ url_for('main_page', app_id=def_app_id) }}">{{ def_app_id }}</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
         {% block body %}{% endblock %}
         <script src="{{ url_for('static', filename='js/bootstrap.js') }}"></script>
     </body>

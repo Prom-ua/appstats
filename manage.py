@@ -42,52 +42,51 @@ def update():
     hour_aver_data = {}
 
     # Calculating hour average data
-    for name, counts in hour_data.iteritems():
-        req_count = counts['NUMBER']
-        h_aver_counts = {}
-        for field in counts:
-            if field == 'NUMBER':
-                req_per_hour = float(counts[field]) / last_hour_counter.interval
-                h_aver_counts[field] = round(req_per_hour, 1)
-            else:
-                h_aver_counts[field] = round(float(counts[field]) / req_count, 1)
-        hour_aver_data[name] = h_aver_counts
+    for app_id in hour_data:
+        hour_aver_data[app_id] = {}
+        for name, counts in hour_data[app_id].iteritems():
+            req_count = counts['NUMBER']
+            h_aver_counts = {}
+            for field in counts:
+                if field == 'NUMBER':
+                    req_per_hour = float(counts[field]) / last_hour_counter.interval
+                    h_aver_counts[field] = round(req_per_hour, 1)
+                else:
+                    h_aver_counts[field] = round(float(counts[field]) / req_count, 1)
+            hour_aver_data[app_id][name] = h_aver_counts
 
     # Calculating day average data
-    for name, counts in day_data.iteritems():
-        req_count = counts['NUMBER']
-        d_aver_counts = {}
-        for field in counts:
-            if  field == 'NUMBER':
-                req_per_day = float(counts[field]) / last_day_counter.interval
-                d_aver_counts[field] = round(req_per_day, 1)
-            else:
-                d_aver_counts[field] = round(float(counts[field]) / req_count, 1)
-        day_aver_data[name] = d_aver_counts
+    for app_id in day_data:
+        day_aver_data[app_id] = {}
+        for name, counts in day_data[app_id].iteritems():
+            req_count = counts['NUMBER']
+            d_aver_counts = {}
+            for field in counts:
+                if  field == 'NUMBER':
+                    req_per_day = float(counts[field]) / last_day_counter.interval
+                    d_aver_counts[field] = round(req_per_day, 1)
+                else:
+                    d_aver_counts[field] = round(float(counts[field]) / req_count, 1)
+            day_aver_data[app_id][name] = d_aver_counts
 
     # Transforming data into flat form
     docs = []
-    for name in hour_data:
-        # Trying to get site, separated by @ from the name
-        if len(name.split('@')) == 2:
-            site, short_name = name.split('@')
-        else:
-            short_name = name
-            site = 'prom.ua' # if site isn't specified, take default one
-        doc = dict(name=short_name, site=site)
-        for field in last_hour_counter.fields:
-            key = '%s_%s' % (field, 'hour')
-            doc[key] = hour_data[name][field]
+    for app_id in hour_data:
+        for name in hour_data[app_id]:
+            doc = dict(name=name, app_id=app_id)
+            for field in last_hour_counter.fields:
+                key = '%s_%s' % (field, 'hour')
+                doc[key] = hour_data[app_id][name][field]
 
-            key = '%s_%s' % (field, 'hour_aver')
-            doc[key] = hour_aver_data[name][field]
+                key = '%s_%s' % (field, 'hour_aver')
+                doc[key] = hour_aver_data[app_id][name][field]
 
-            key = '%s_%s' % (field, 'day')
-            doc[key] = day_data[name][field]
+                key = '%s_%s' % (field, 'day')
+                doc[key] = day_data[app_id][name][field]
 
-            key = '%s_%s' % (field, 'day_aver')
-            doc[key] = day_aver_data[name][field]
-        docs.append(doc)
+                key = '%s_%s' % (field, 'day_aver')
+                doc[key] = day_aver_data[app_id][name][field]
+            docs.append(doc)
 
     # Replace with new data
     mongo_db.appstats_docs.remove()

@@ -16,8 +16,9 @@ class AppStatsClient(object):
     interval = 100 # seconds
     timeout = 1 # timeout in seconds to submit data
 
-    def __init__(self, url):
+    def __init__(self, app_id, url):
         self.url = url
+        self.app_id = app_id
         self._acc = {}
         self._last_sent = time()
         self._session = Session(
@@ -38,7 +39,8 @@ class AppStatsClient(object):
                 self.submit()
 
     def submit(self):
-        data = json.dumps(self._acc)
+        data = {self.app_id: self._acc}
+        data = json.dumps(data)
         try:
             self._session.post(self.url, data=data)
         except RequestException, e:

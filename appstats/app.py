@@ -108,25 +108,25 @@ app.wsgi_app = add_data_middleware(app.wsgi_app)
 
 
 def add_data(data):
-    for name, counts in data.iteritems():
-        if not 'NUMBER' in counts:
-            for counter in counters:
-                counter.incrby(name, 'NUMBER', 1)
-        for field, val in counts.iteritems():
-            for counter in counters:
-                counter.incrby(name, field, val)
+    for app_id in data:
+        for name, counts in data[app_id].iteritems():
+            if not 'NUMBER' in counts:
+                for counter in counters:
+                    counter.incrby(app_id, name, 'NUMBER', 1)
+            for field, val in counts.iteritems():
+                for counter in counters:
+                    counter.incrby(app_id, name, field, val)
 
 
-@app.route('/')
-def main_page():
+@app.route('/', defaults={'app_id': app.config['APP_IDS'][0]})
+@app.route('/<app_id>/')
+def main_page(app_id):
     sort_by_field = request.args.get('sort_by_field', 'NUMBER')
     sort_by_period = request.args.get('sort_by_period', 'hour')
     number_of_lines = request.args.get('number_of_lines', 20, int)
     selected_field = request.args.get('selected_field', 'NUMBER')
-    site = request.args.get('selected_site', 'prom.ua')
-    sites = mongo_db.appstats_docs.distinct('site')
 
-    docs = mongo_db.appstats_docs.find({'site': site})
+    docs = mongo_db.appstats_docs.find({'app_id': app_id})
     if sort_by_field == 'name':
         docs = docs.sort('name')
     else:
@@ -137,25 +137,23 @@ def main_page():
     return render_template('main_page.html', sort_by_field=sort_by_field,
                            fields=fields, sort_by_period=sort_by_period,
                            number_of_lines=number_of_lines, docs=docs,
-                           selected_field=selected_field, sites=sites,
-                           selected_site=site)
+                           selected_field=selected_field,
+                           app_id=app_id, app_ids=app.config['APP_IDS'])
 
 
-@app.route('/info/<name>')
-def info_page(name):
+@app.route('/info/<app_id>/<name>/')
+def info_page(app_id, name):
     field = request.args.get('selected_field', 'NUMBER')
     hours = request.args.get('hours', 6, int)
-    site = request.args.get('selected_site', 'prom.ua')
-    sites = periodic_counter.collection.distinct('site')
     # Starting datetime of needed data
     starting_from = datetime.datetime.utcnow() - datetime.timedelta(hours=hours)
     docs = periodic_counter.collection.find({'name': name,
                                              'date': {'$gt': starting_from},
-                                             'site': site})
+                                             'app_id': app_id})
     docs = docs.sort('date')
     tz = pytz.timezone('Europe/Kiev')
     data = []
-    # If docs is empty, we will return zero value on current datime.
+    # If docs is empty, we will return zero value on current datetime.
     if docs.count() == 0:
         date = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
         date = date.astimezone(tz)
@@ -169,7 +167,8 @@ def info_page(name):
         data.append(point)
     return render_template('info_page.html', fields=fields, data=data,
                            name=name, selected_field=field, hours=hours,
-                           selected_site=site, sites=sites)
+                           selected_site=app_id, app_id=app_id,
+                           app_ids=app.config['APP_IDS'])
 
 
 @app.route('/add/', methods=['POST'])

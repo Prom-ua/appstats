@@ -9,6 +9,8 @@ MONGO_HOST = '127.0.0.1'
 MONGO_PORT = 27017
 MONGO_DB_NAME = 'appstats'
 
+APP_IDS = ['prom.ua', 'tiu.ru', 'deal.by']
+
 # FIELDS = [{'key': 'example', 'name': 'EXAMPLE', 'format': 'time'}]
 FIELDS = [dict(key='cpu_time', name='CPU', format='time'),
           dict(key='real_time', name='TOTAL', format='time'),
