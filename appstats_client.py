@@ -1,58 +1,50 @@
-# encoding: utf-8
-
 import json
+import logging
 import threading
 from time import time
 
-import requests
+from requests import Session, RequestException
 
+
+log = logging.getLogger(__name__)
 
 lock = threading.Lock()
 
 
 class AppStatsClient(object):
-
-    count_limit = 100
-    desired_interval = 600
-    req_timeout = 1
+    limit = 100 # records
+    interval = 100 # seconds
+    timeout = 1 # timeout in seconds to submit data
 
     def __init__(self, url):
         self.url = url
-        self._session = requests.session()
         self._acc = {}
         self._last_sent = time()
-        self._req_count = 0
+        self._session = Session(
+            headers = {'Content-Type': 'application/json'},
+            timeout = self.timeout,
+        )
 
-    def add_data(self, data):
+    def add(self, name, counts):
         with lock:
-            for name, counts in data.iteritems():
-                if name not in self._acc:
-                    self._acc[name] = counts.copy()
-                    self._acc[name]['NUMBER'] = 1
-                else:
-                    for field in counts:
-                        if field in self._acc[name]:
-                            self._acc[name][field] += counts[field]
-                        else:
-                            self._acc[name][field] = counts[field]
-                    self._acc[name]['NUMBER'] += 1
-                self._req_count += 1
-            if ((time() - self._last_sent) >= self.desired_interval
-                or self._req_count >= self.count_limit
-            ):
-                self.send_data()
+            acc = self._acc.setdefault(name, {'NUMBER': 0})
+            acc['NUMBER'] += 1
+            for counter in counts:
+                acc.setdefault(counter, 0)
+                acc[counter] += counts[counter]
 
-    def send_data(self):
+            elapsed = time() - self._last_sent
+            if elapsed >= self.interval or len(self._acc) >= self.limit:
+                self.submit()
+
+    def submit(self):
         data = json.dumps(self._acc)
-        self._send_http(data)
-        self._last_sent = time()
-        self._req_count = 0
-        self._acc = {}
-
-    def _send_http(self, data):
-        headers = {'content-type': 'application/json'}
         try:
-            self._session.post(self.url, data=data, headers=headers,
-                               timeout=self.req_timeout)
-        except requests.RequestException:
-            pass
+            self._session.post(self.url, data=data)
+        except RequestException, e:
+            log.debug('Error during data submission: %s' % e)
+        else:
+            log.debug('Successfully submitted app stats')
+        finally:
+            self._last_sent = time()
+            self._acc = {}
