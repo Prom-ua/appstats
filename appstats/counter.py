@@ -35,27 +35,25 @@ class RollingCounter(object):
         return key_format % kwargs
 
     def _get_app_ids(self):
-        app_ids = []
+        app_ids = set()
         search_key = self._make_key(self.last_val_key_format, app_id='*',
                                     name='*', field='*')
         for key in self.db.keys(search_key):
             # Example key format:
             # appstats,prom.ua,path.to.module:Class.method,3600,60,last_val,CPU
             prefix, app_id, name, interval, part, suffix, field = key.split(',')
-            if app_id not in app_ids:
-                app_ids.append(app_id)
+            app_ids.add(app_id)
         return app_ids
 
     def _get_names(self, app_id):
-        names = []
+        names = set()
         search_key = self._make_key(self.last_val_key_format, app_id=app_id,
                                     name='*', field='*')
         for key in self.db.keys(search_key):
             # Example key format:
             # appstats,prom.ua,path.to.module:Class.method,3600,60,last_val,CPU
             prefix, app_id, name, interval, part, suffix, field = key.split(',')
-            if name not in names:
-                names.append(name)
+            names.add(name)
         return names
 
     def update(self):
@@ -171,27 +169,25 @@ class PeriodicCounter(object):
         self._interval = 60 / divider
 
     def _get_app_ids(self):
-        app_ids = []
+        app_ids = set()
         search_key = self._make_key(self.key_format, app_id='*',
                                     name='*', field='*')
         for key in self.redis_db.keys(search_key):
             # Example key format:
             # appstats,periodic,6,prom.ua,path.to.module:Class.method,CPU
             prefix, periodic, divider, app_id, name, field = key.split(',')
-            if app_id not in app_ids:
-                app_ids.append(app_id)
+            app_ids.add(app_id)
         return app_ids
 
     def _get_names(self, app_id):
-        names = []
+        names = set()
         search_key = self._make_key(self.key_format, name='*', app_id=app_id,
                                     field='*')
         for key in self.redis_db.keys(search_key):
             # Example key format:
             # appstats,periodic,6,prom.ua,path.to.module:Class.method,CPU
             prefix, periodic, divider, app_id, name, field = key.split(',')
-            if name not in names:
-                names.append(name)
+            names.add(name)
         return names
 
     def _make_key(self, key_format, **kwargs):
