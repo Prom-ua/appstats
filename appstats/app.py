@@ -6,7 +6,7 @@ from os.path import expanduser
 
 import pytz
 import redis
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, url_for
 from pymongo import Connection, DESCENDING
 from werkzeug.wsgi import ClosingIterator
 
@@ -92,6 +92,15 @@ def time_format(value):
     else:
         time = time / 24
         return'%.1f days' % time
+
+
+def modified_url_for(**updates):
+    args = request.view_args.copy()
+    args.update(updates)
+    args.update(request.args)
+    print args
+    return url_for(request.endpoint, **args)
+app.jinja_env.globals['modified_url_for'] = modified_url_for
 
 
 def add_data_middleware(wsgi_app):
