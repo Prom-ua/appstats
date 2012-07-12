@@ -126,7 +126,7 @@ def add_data(data):
                     counter.incrby(app_id, name, field, val)
 
 
-@app.route('/', defaults={'app_id': app.config['APP_IDS'][0]})
+@app.route('/', defaults={'app_id': app.config['APP_IDS'][0]['key']})
 @app.route('/<app_id>/')
 def main_page(app_id):
     sort_by_field = request.args.get('sort_by_field', 'NUMBER')

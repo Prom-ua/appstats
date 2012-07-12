@@ -13,8 +13,8 @@
                     <div class="nav-collapse collapse">
                         <ul class=nav>
                             {% for def_app_id in app_ids %}
-                                <li class={{ "active" if def_app_id == app_id else "" }}>
-                                    <a href="{{ current_url(app_id=def_app_id) }}">{{ def_app_id }}</a>
+                                <li class={{ "active" if def_app_id['key'] == app_id else "" }}>
+                                    <a href="{{ current_url(app_id=def_app_id['key']) }}">{{ def_app_id['name'] }}</a>
                                 </li>
                             {% endfor %}
                         </ul>
