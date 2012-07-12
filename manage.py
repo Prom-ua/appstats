@@ -17,7 +17,8 @@ def strip_db():
     max_age = 182 # Half-year
     oldest_date = datetime.utcnow() - timedelta(max_age)
     docs = periodic_counter.collection.find({'date': {'$lt': oldest_date}})
-    periodic_counter.collection.remove(docs)
+    for doc in docs:
+        periodic_counter.collection.remove(doc)
 
 
 @manager.command
