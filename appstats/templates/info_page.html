@@ -21,7 +21,7 @@
         function _submit() {
             field = $('select[name="selected_field"]').val();
             hours = $('button[name="hours"].active').val();
-            document.location.href="{{ url_for('info_page', app_id=app_id, name=name)}}" +
+            document.location.href="{{ url_for(request.endpoint, app_id=app_id, name=name)}}" +
             '?' + $.param([
                 {name : 'selected_field', value : field},
                 {name : 'hours', value : hours}
