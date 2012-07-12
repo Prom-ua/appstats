@@ -14,7 +14,7 @@
                         <ul class=nav>
                             {% for def_app_id in app_ids %}
                                 <li class={{ "active" if def_app_id == app_id else "" }}>
-                                    <a href="{{ modified_url_for(app_id=def_app_id) }}">{{ def_app_id }}</a>
+                                    <a href="{{ current_url(app_id=def_app_id) }}">{{ def_app_id }}</a>
                                 </li>
                             {% endfor %}
                         </ul>

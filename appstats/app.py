@@ -94,13 +94,12 @@ def time_format(value):
         return'%.1f days' % time
 
 
-def modified_url_for(**updates):
+def current_url(**updates):
     args = request.view_args.copy()
     args.update(updates)
     args.update(request.args)
-    print args
     return url_for(request.endpoint, **args)
-app.jinja_env.globals['modified_url_for'] = modified_url_for
+app.jinja_env.globals['current_url'] = current_url
 
 
 def add_data_middleware(wsgi_app):
