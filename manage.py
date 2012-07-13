@@ -46,9 +46,10 @@ def update():
         for name, counts in hour_data[app_id].iteritems():
             req_count = counts['NUMBER']
             h_aver_counts = {}
-            if req_count == 0 :
+            if req_count == 0:
                 for field in counts:
                     h_aver_counts[field] = 0.0
+                continue
             for field in counts:
                 if field == 'NUMBER':
                     req_per_hour = float(counts[field]) / last_hour_counter.interval
@@ -63,9 +64,10 @@ def update():
         for name, counts in day_data[app_id].iteritems():
             req_count = counts['NUMBER']
             d_aver_counts = {}
-            if req_count == 0 :
+            if req_count == 0:
                 for field in counts:
                     d_aver_counts[field] = 0.0
+                continue
             for field in counts:
                 if  field == 'NUMBER':
                     req_per_day = float(counts[field]) / last_day_counter.interval
