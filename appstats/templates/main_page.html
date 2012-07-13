@@ -45,54 +45,54 @@
                     <td> </td>
                     {% for field in fields %}
                         {% if field['key'] == sort_by_field and sort_by_period == 'hour_aver' %}
-                                <td> &ltH&gt </td>
+                                <td> Avg(1h) </td>
                             {% else %}
                                 <td><a href="{{ url_for(request.endpoint, app_id=app_id,
                                                         sort_by_field=field['key'],
                                                         sort_by_period='hour_aver',
                                                         number_of_lines=number_of_lines,
                                                         selected_field=selected_field) }}">
-                                        &ltH&gt
+                                        Avg(1h)
                                     </a>
                                 </td>
                             {% endif %}
 
                             {% if field['key'] == selected_field %}
                                 {% if field['key'] == sort_by_field and sort_by_period == 'day_aver' %}
-                                    <td> &ltD&gt </td>
+                                    <td> Avg(24h) </td>
                                 {% else %}
                                     <td><a href="{{ url_for(request.endpoint, app_id=app_id,
                                                             sort_by_field=field['key'],
                                                             sort_by_period='day_aver',
                                                             number_of_lines=number_of_lines,
                                                             selected_field=selected_field) }}">
-                                            &ltD&gt
+                                            Avg(24h)
                                         </a>
                                     </td>
                                 {% endif %}
 
                                 {% if field['key'] == sort_by_field and sort_by_period == 'hour' %}
-                                    <td> H </td>
+                                    <td> 1h </td>
                                 {% else %}
                                     <td><a href="{{ url_for(request.endpoint, app_id=app_id,
                                                             sort_by_field=field['key'],
                                                             sort_by_period='hour',
                                                             number_of_lines=number_of_lines,
                                                             selected_field=selected_field) }}">
-                                            H
+                                            1h
                                         </a>
                                     </td>
                                 {% endif %}
 
                                 {% if field['key'] == sort_by_field and sort_by_period == 'day' %}
-                                    <td> D </td>
+                                    <td> 24h </td>
                                 {% else %}
                                     <td><a href="{{ url_for(request.endpoint, app_id=app_id,
                                                             sort_by_field=field['key'],
                                                             sort_by_period='day',
                                                             number_of_lines=number_of_lines,
                                                             selected_field=selected_field) }}">
-                                            D
+                                            24h
                                         </a>
                                     </td>
                                 {% endif %}
