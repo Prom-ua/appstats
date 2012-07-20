@@ -77,10 +77,11 @@ def update():
             day_aver_data[app_id][name] = d_aver_counts
 
     # Transforming data into flat form
-    docs = []
+    docs = {}
+
     for app_id in hour_data:
         for name in hour_data[app_id]:
-            doc = dict(name=name, app_id=app_id)
+            doc = docs.setdefault((app_id, name), dict(app_id=app_id, name=name))
             for field in last_hour_counter.fields:
                 key = '%s_%s' % (field, 'hour')
                 doc[key] = hour_data[app_id][name][field]
@@ -88,17 +89,20 @@ def update():
                 key = '%s_%s' % (field, 'hour_aver')
                 doc[key] = hour_aver_data[app_id][name][field]
 
+    for app_id in day_data:
+        for name in day_data[app_id]:
+            doc = docs.setdefault((app_id, name), dict(app_id=app_id, name=name))
+            for field in last_day_counter.fields:
                 key = '%s_%s' % (field, 'day')
                 doc[key] = day_data[app_id][name][field]
 
                 key = '%s_%s' % (field, 'day_aver')
                 doc[key] = day_aver_data[app_id][name][field]
-            docs.append(doc)
 
     # Replace with new data
     mongo_db.appstats_docs.remove()
     if docs:
-        mongo_db.appstats_docs.insert(docs)
+        mongo_db.appstats_docs.insert(docs.values())
 
 
 if __name__ == '__main__':
