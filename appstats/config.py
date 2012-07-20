@@ -16,4 +16,4 @@ FIELDS = [dict(key='cpu_time', name='CPU', format='time'),
           dict(key='sql', name='SQL', format=None),
           dict(key='solr', name='SOLR', foramt=None),
           dict(key='redis', name='REDIS', format=None),
-          dict(key='memcached', name='MEMCACHED', format=None)]
+          dict(key='memcached', name='MEMC', format=None)]
