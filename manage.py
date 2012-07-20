@@ -86,6 +86,9 @@ def update():
                 key = '%s_%s' % (field, 'hour')
                 doc[key] = hour_data[app_id][name][field]
 
+        for name in hour_aver_data[app_id]:
+            doc = docs.setdefault((app_id, name), dict(app_id=app_id, name=name))
+            for field in last_hour_counter.fields:
                 key = '%s_%s' % (field, 'hour_aver')
                 doc[key] = hour_aver_data[app_id][name][field]
 
@@ -96,6 +99,9 @@ def update():
                 key = '%s_%s' % (field, 'day')
                 doc[key] = day_data[app_id][name][field]
 
+        for name in day_aver_data[app_id]:
+            doc = docs.setdefault((app_id, name), dict(app_id=app_id, name=name))
+            for field in last_day_counter.fields:
                 key = '%s_%s' % (field, 'day_aver')
                 doc[key] = day_aver_data[app_id][name][field]
 
