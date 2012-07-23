@@ -127,6 +127,7 @@ class RollingCounter(object):
                     count += last_val
                     counts[field] = count
                 res[app_id][name] = counts
+        # res format example: {'app_id1': {'name1': {'field1': 1, 'field2': 2}}}
         return res
 
     def incrby(self, app_id, name, field, increment):
@@ -210,7 +211,7 @@ class PeriodicCounter(object):
         prev_upd_key = self._make_key(self.prev_upd_key_format)
         prev_upd = self.redis_db.get(prev_upd_key)
 
-        # Get current datetime rounded to interval
+        # Get current utc datetime rounded to interval
         now = datetime.utcnow()
         new_time = time(hour=now.hour,
                         minute=(now.minute / self._interval * self._interval))
@@ -222,7 +223,7 @@ class PeriodicCounter(object):
             # If there isn't prev_upd in redis,
             # we will use 'one interval before current time' variable instead
             prev_upd = now - timedelta(minutes=self._interval)
-            # Get unix timestamp
+            # Get unix utc timestamp
             prev_upd_unix = timegm(prev_upd.utctimetuple())
             self.redis_db.set(prev_upd_key, prev_upd_unix)
         delta = now - prev_upd
