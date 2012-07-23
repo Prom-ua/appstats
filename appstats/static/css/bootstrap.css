@@ -1525,6 +1525,7 @@ table {
 
 .table th,
 .table td {
+  min-width: 70px;
   padding: 8px;
   line-height: 18px;
   text-align: left;
@@ -1533,6 +1534,7 @@ table {
 }
 
 .table th {
+  width: 100%;
   font-weight: bold;
 }
 
