@@ -1,0 +1,11 @@
+body {
+    padding-top: 45px;
+}
+
+.table td {
+  min-width: 70px;
+}
+
+.table th {
+  width: 100%;
+}
