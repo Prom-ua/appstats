@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from flaskext.script import Manager
 
 from appstats.app import (app, last_hour_counter, last_day_counter,
-    periodic_counter, counters, mongo_db, redis_db, REDIS_PREFIX
+    periodic_counters, counters, mongo_db, redis_db, REDIS_PREFIX
 )
 
 
@@ -16,7 +16,8 @@ manager = Manager(app)
 def strip_db():
     max_age = 182 # Half-year
     oldest_date = datetime.utcnow() - timedelta(max_age)
-    periodic_counter.collection.remove({'date': {'$lt': oldest_date}})
+    for periodic_counter in periodic_counters:
+        periodic_counter.collection.remove({'date': {'$lt': oldest_date}})
 
 
 @manager.command
@@ -26,8 +27,9 @@ def clear():
     redis_db.delete(*keys)
     # Drop mongo 'cache' collection
     mongo_db.drop_collection('appstats_docs')
-    # Drop mongo periodic stats collection
-    mongo_db.drop_collection(periodic_counter.collection)
+    # Drop all mongo periodic stats collections
+    for periodic_counter in periodic_counters:
+        mongo_db.drop_collection(periodic_counter.collection)
 
 
 @manager.command

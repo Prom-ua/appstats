@@ -29,23 +29,35 @@ redis_db = redis.Redis(host=app.config['REDIS_HOST'],
                        db=app.config['REDIS_DB'])
 REDIS_PREFIX = 'appstats'
 
-mongo_conn = Connection(host=app.config['MONGO_HOST'],
-                        port=app.config['MONGO_PORT'], network_timeout=30,
-                        _connect=False)
+mongo_conn = Connection(host=app.config['MONGO_HOST'], network_timeout=30,
+                        port=app.config['MONGO_PORT'], _connect=False)
 mongo_db = mongo_conn[app.config['MONGO_DB_NAME']]
 
 last_hour_counter = RollingCounter(db=redis_db, fields=fields_keys,
                                    redis_prefix=REDIS_PREFIX)
-
 last_day_counter = RollingCounter(db=redis_db, fields=fields_keys,
                                   redis_prefix=REDIS_PREFIX, interval=86400,
                                   part=3600)
+rolling_counters = [last_hour_counter, last_day_counter]
 
-periodic_counter = PeriodicCounter(divider=6, redis_db=redis_db,
-                                   mongo_db=mongo_db, fields=fields_keys,
-                                   redis_prefix=REDIS_PREFIX)
+periodic_counters = []
+# Very accurate, one day(24 hours) counter with 1 min intervals
+periodic_counters.append(PeriodicCounter(divider=60, redis_db=redis_db,
+                                         mongo_db=mongo_db, fields=fields_keys,
+                                         redis_prefix=REDIS_PREFIX,
+                                         period=24))
+# Middle accurate, 6 days(144 hours) counter with 10 min intervals
+periodic_counters.append(PeriodicCounter(divider=6, redis_db=redis_db,
+                                         mongo_db=mongo_db, fields=fields_keys,
+                                         redis_prefix=REDIS_PREFIX,
+                                         period=144))
+# Low accurate, eternal counter with 60 min intervals
+periodic_counters.append(PeriodicCounter(divider=1, redis_db=redis_db,
+                                         mongo_db=mongo_db, fields=fields_keys,
+                                         redis_prefix=REDIS_PREFIX))
+periodic_counters = sorted(periodic_counters, key=lambda c: c.period)
 
-counters = [last_hour_counter, last_day_counter, periodic_counter]
+counters = rolling_counters + periodic_counters
 
 
 @app.template_filter()
@@ -155,9 +167,14 @@ def info_page(app_id, name):
     hours = request.args.get('hours', 6, int)
     # Starting datetime of needed data
     starting_from = datetime.datetime.utcnow() - datetime.timedelta(hours=hours)
-    docs = periodic_counter.collection.find({'name': name,
-                                             'date': {'$gt': starting_from},
-                                             'app_id': app_id})
+    # Choosing the most suitable, accurate counter based on given hours
+    for periodic_counter in periodic_counters:
+        if hours <= periodic_counter.period:
+            counter = periodic_counter
+            print counter.period
+            break
+    docs = counter.collection.find({'name': name, 'app_id': app_id,
+                                    'date': {'$gt': starting_from}})
     docs = docs.sort('date')
     tz = pytz.timezone('Europe/Kiev')
     data = []
@@ -171,7 +188,10 @@ def info_page(app_id, name):
     for doc in docs:
         date = doc['date'].replace(tzinfo=pytz.utc)
         date = date.astimezone(tz)
-        point = [mktime(date.timetuple()) * 1000, doc[field]]
+        value = doc[field]
+        if field != 'NUMBER':
+            value = float(value) / doc['NUMBER']
+        point = [mktime(date.timetuple()) * 1000, value]
         data.append(point)
     return render_template('info_page.html', fields=fields, data=data,
                            name=name, selected_field=field, hours=hours,

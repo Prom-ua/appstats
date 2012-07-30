@@ -161,12 +161,14 @@ class PeriodicCounter(object):
     key_format = '%(prefix)s,periodic,%(divider)s,%(app_id)s,%(name)s,%(field)s'
     prev_upd_key_format = '%(prefix)s,periodic,%(divider)s,prev_upd'
 
-    def __init__(self, divider, redis_db, mongo_db, fields, redis_prefix):
+    def __init__(self, divider, redis_db, mongo_db, fields,
+                 redis_prefix, period = float('inf')):
         self.redis_db = redis_db
         self.fields = fields
         self.collection = mongo_db['appstats_periodic-%u' % divider]
         self.prefix = redis_prefix
         self.divider = divider
+        self.period = period
         self._interval = 60 / divider
 
     def _get_app_ids(self):
@@ -255,3 +257,6 @@ class PeriodicCounter(object):
                 self.collection.insert(docs)
             prev_upd = timegm(now.utctimetuple())
             self.redis_db.set(prev_upd_key, prev_upd)
+            if self.period != float('inf'):
+                oldest_date = now - timedelta(hours=self.period)
+                self.collection.remove({'date': {'$lte': oldest_date}})
