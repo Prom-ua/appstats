@@ -44,11 +44,11 @@ last_day_counter = RollingCounter(db=redis_db, fields=fields_keys,
 rolling_counters = [last_hour_counter, last_day_counter]
 
 periodic_counters = []
-# Very accurate, one day(24 hours) counter with 1 min intervals
+# Very accurate, 6 hours counter with 1 min intervals
 periodic_counters.append(PeriodicCounter(divider=60, redis_db=redis_db,
                                          mongo_db=mongo_db, fields=fields_keys,
                                          redis_prefix=REDIS_PREFIX,
-                                         period=24))
+                                         period=6))
 # Middle accurate, 6 days(144 hours) counter with 10 min intervals
 periodic_counters.append(PeriodicCounter(divider=6, redis_db=redis_db,
                                          mongo_db=mongo_db, fields=fields_keys,
