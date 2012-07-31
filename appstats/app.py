@@ -4,6 +4,7 @@ import datetime
 from time import mktime
 from copy import deepcopy
 from os.path import expanduser
+from operator import itemgetter
 
 import pytz
 import redis
@@ -148,7 +149,7 @@ def main_page(app_id):
     sort_by_period = request.args.get('sort_by_period', 'hour')
     number_of_lines = request.args.get('number_of_lines', 20, int)
     selected_field = request.args.get('selected_field', 'NUMBER')
-    visible_fields = filter(lambda f: f.get('visible'), fields)
+    visible_fields = filter(itemgetter('visible'), fields)
 
     docs = mongo_db.appstats_docs.find({'app_id': app_id})
     if sort_by_field == 'name':
