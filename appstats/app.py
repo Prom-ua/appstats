@@ -2,6 +2,7 @@
 
 import datetime
 from time import mktime
+from copy import deepcopy
 from os.path import expanduser
 
 import pytz
@@ -19,9 +20,10 @@ if not app.config.from_envvar('APPSTATS_SETTINGS', silent=True):
     app.config.from_pyfile('/etc/appstats.cfg', silent=True)
     app.config.from_pyfile(expanduser('~/.appstats.cfg'), silent=True)
 
-fields = app.config['FIELDS'][:]
+fields = deepcopy(app.config['FIELDS'])
 if 'NUMBER' not in [field['key'] for field in fields]:
-    fields.insert(0, dict(key='NUMBER', name='NUMBER', format=None))
+    fields.insert(0, dict(key='NUMBER', name='NUMBER',
+                          format=None, visible=True))
 fields_keys = [field['key'] for field in fields]
 
 redis_db = redis.Redis(host=app.config['REDIS_HOST'],
@@ -146,6 +148,7 @@ def main_page(app_id):
     sort_by_period = request.args.get('sort_by_period', 'hour')
     number_of_lines = request.args.get('number_of_lines', 20, int)
     selected_field = request.args.get('selected_field', 'NUMBER')
+    visible_fields = filter(lambda f: f.get('visible'), fields)
 
     docs = mongo_db.appstats_docs.find({'app_id': app_id})
     if sort_by_field == 'name':
@@ -156,10 +159,11 @@ def main_page(app_id):
     docs = docs.limit(number_of_lines)
 
     return render_template('main_page.html', sort_by_field=sort_by_field,
-                           fields=fields, sort_by_period=sort_by_period,
-                           number_of_lines=number_of_lines, docs=docs,
-                           selected_field=selected_field,
-                           app_id=app_id, app_ids=app.config['APP_IDS'])
+                           fields=visible_fields,
+                           sort_by_period=sort_by_period, docs=docs,
+                           number_of_lines=number_of_lines,
+                           selected_field=selected_field, app_id=app_id,
+                           app_ids=app.config['APP_IDS'])
 
 
 @app.route('/info/<app_id>/<name>/')
@@ -193,9 +197,12 @@ def info_page(app_id, name):
     for doc in docs:
         date = doc['date'].replace(tzinfo=pytz.utc)
         date = date.astimezone(tz)
-        value = doc[field]
-        if field != 'NUMBER':
-            value = float(value) / doc['NUMBER']
+        if doc['NUMBER'] == 0:
+            value = 0
+        else:
+            value = doc[field]
+            if field != 'NUMBER':
+                value = float(value) / doc['NUMBER']
         point = [mktime(date.timetuple()) * 1000, value]
         data.append(point)
     return render_template('info_page.html', fields=fields, data=data,

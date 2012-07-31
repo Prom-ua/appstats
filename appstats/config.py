@@ -10,10 +10,10 @@ APP_IDS = [dict(key='prom.ua', name='Prom.ua'),
            dict(key='tiu.ru', name='Tiu.ru'),
            dict(key='deal.by', name='Deal.by')]
 
-# FIELDS = [{'key': 'example', 'name': 'EXAMPLE', 'format': 'time'}]
-FIELDS = [dict(key='cpu_time', name='CPU', format='time'),
-          dict(key='real_time', name='TOTAL', format='time'),
-          dict(key='sql', name='SQL', format=None),
-          dict(key='solr', name='SOLR', foramt=None),
-          dict(key='redis', name='REDIS', format=None),
-          dict(key='memcached', name='MEMC', format=None)]
+FIELDS = [dict(key='NUMBER',    name='NUMBER',  format=None,    visible=True),
+          dict(key='cpu_time',  name='CPU',     format='time',  visible=True),
+          dict(key='real_time', name='TOTAL',   format='time',  visible=True),
+          dict(key='sql',       name='SQL',     format=None,    visible=True),
+          dict(key='solr',      name='SOLR',    foramt=None,    visible=True),
+          dict(key='redis',     name='REDIS',   format=None,    visible=True),
+          dict(key='memcached', name='MEMC',    format=None,    visible=True)]
