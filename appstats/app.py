@@ -51,10 +51,11 @@ periodic_counters.append(PeriodicCounter(divider=6, redis_db=redis_db,
                                          mongo_db=mongo_db, fields=fields_keys,
                                          redis_prefix=REDIS_PREFIX,
                                          period=144))
-# Low accurate, eternal counter with 60 min intervals
+# Low accurate, half-year(182 * 24 = 4368) counter with 60 min intervals
 periodic_counters.append(PeriodicCounter(divider=1, redis_db=redis_db,
                                          mongo_db=mongo_db, fields=fields_keys,
-                                         redis_prefix=REDIS_PREFIX))
+                                         redis_prefix=REDIS_PREFIX,
+                                         period=4368))
 periodic_counters = sorted(periodic_counters, key=lambda c: c.period)
 
 counters = rolling_counters + periodic_counters
@@ -168,17 +169,21 @@ def info_page(app_id, name):
     # Starting datetime of needed data
     starting_from = datetime.datetime.utcnow() - datetime.timedelta(hours=hours)
     # Choosing the most suitable, accurate counter based on given hours
+    counter = None
     for periodic_counter in periodic_counters:
         if hours <= periodic_counter.period:
             counter = periodic_counter
-            print counter.period
             break
+    # If there isn't suitable counter,
+    # take the last one (contains the most full data)
+    if not counter:
+        counter = periodic_counters[-1]
     docs = counter.collection.find({'name': name, 'app_id': app_id,
                                     'date': {'$gt': starting_from}})
     docs = docs.sort('date')
     tz = pytz.timezone('Europe/Kiev')
     data = []
-    # If docs is empty, we will return zero value on current datetime.
+    # If docs is empty, return zero value on current datetime.
     if docs.count() == 0:
         date = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
         date = date.astimezone(tz)

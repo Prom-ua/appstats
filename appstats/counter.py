@@ -156,13 +156,16 @@ class PeriodicCounter(object):
       - 'fields' -- list of fields names to track of
       - 'redis_prefix' -- prefix used in each redis key to separate statistics
       data
+      - 'period' -- interval in hours during which the counter stores the data.
+      All data older than this value will be removed. 
+      Default value is 30 * 24 = 720 (30 days).
     """
 
     key_format = '%(prefix)s,periodic,%(divider)s,%(app_id)s,%(name)s,%(field)s'
     prev_upd_key_format = '%(prefix)s,periodic,%(divider)s,prev_upd'
 
     def __init__(self, divider, redis_db, mongo_db, fields,
-                 redis_prefix, period = float('inf')):
+                 redis_prefix, period=720):
         self.redis_db = redis_db
         self.fields = fields
         self.collection = mongo_db['appstats_periodic-%u' % divider]
@@ -223,7 +226,7 @@ class PeriodicCounter(object):
             prev_upd = datetime.utcfromtimestamp(prev_upd)
         else:
             # If there isn't prev_upd in redis,
-            # we will use 'one interval before current time' variable instead
+            # use 'one interval before current time' variable instead
             prev_upd = now - timedelta(minutes=self._interval)
             # Get unix utc timestamp
             prev_upd_unix = timegm(prev_upd.utctimetuple())
@@ -257,6 +260,5 @@ class PeriodicCounter(object):
                 self.collection.insert(docs)
             prev_upd = timegm(now.utctimetuple())
             self.redis_db.set(prev_upd_key, prev_upd)
-            if self.period != float('inf'):
-                oldest_date = now - timedelta(hours=self.period)
-                self.collection.remove({'date': {'$lte': oldest_date}})
+            oldest_date = now - timedelta(hours=self.period)
+            self.collection.remove({'date': {'$lte': oldest_date}})
