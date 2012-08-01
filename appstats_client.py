@@ -13,10 +13,10 @@ lock = threading.Lock()
 
 class AppStatsClient(object):
     limit = 100 # records
-    interval = 100 # seconds
+    interval = 60 # seconds
     timeout = 1 # timeout in seconds to submit data
 
-    def __init__(self, app_id, url):
+    def __init__(self, url, app_id):
         self.url = url
         self.app_id = app_id
         self._acc = {}
@@ -39,8 +39,7 @@ class AppStatsClient(object):
                 self.submit()
 
     def submit(self):
-        data = {self.app_id: self._acc}
-        data = json.dumps(data)
+        data = json.dumps({self.app_id: self._acc})
         try:
             self._session.post(self.url, data=data)
         except RequestException, e:
