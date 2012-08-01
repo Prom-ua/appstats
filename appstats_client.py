@@ -25,6 +25,7 @@ class AppStatsClient(object):
             headers = {'Content-Type': 'application/json'},
             timeout = self.timeout,
         )
+        self._req_count = 0
 
     def add(self, name, counts):
         with lock:
@@ -33,9 +34,10 @@ class AppStatsClient(object):
             for counter in counts:
                 acc.setdefault(counter, 0)
                 acc[counter] += counts[counter]
+            self._req_count += 1
 
             elapsed = time() - self._last_sent
-            if elapsed >= self.interval or len(self._acc) >= self.limit:
+            if elapsed >= self.interval or self._req_count >= self.limit:
                 self.submit()
 
     def submit(self):
@@ -49,3 +51,4 @@ class AppStatsClient(object):
         finally:
             self._last_sent = time()
             self._acc = {}
+            self._req_count = 0
