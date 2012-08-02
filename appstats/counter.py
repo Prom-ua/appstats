@@ -157,7 +157,7 @@ class PeriodicCounter(object):
       - 'redis_prefix' -- prefix used in each redis key to separate statistics
       data
       - 'period' -- interval in hours during which the counter stores the data.
-      All data older than this value will be removed. 
+      All data older than this value will be removed.
       Default value is 30 * 24 = 720 (30 days).
     """
 
@@ -219,10 +219,10 @@ class PeriodicCounter(object):
         # Get current utc datetime rounded to interval
         now = datetime.utcnow()
         new_time = time(hour=now.hour,
-                        minute=(now.minute / self.interval * self.interval))
+                        minute=((now.minute // self.interval) * self.interval))
         now = datetime.combine(now.date(), new_time)
         if prev_upd:
-            prev_upd = int(prev_upd) # Get previous timestamp
+            prev_upd = int(prev_upd)  # Get previous timestamp
             prev_upd = datetime.utcfromtimestamp(prev_upd)
         else:
             # If there isn't prev_upd in redis,
