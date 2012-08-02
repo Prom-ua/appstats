@@ -1,6 +1,5 @@
 # encoding: utf-8
 
-import json
 import datetime
 from time import mktime
 from copy import deepcopy
@@ -14,6 +13,7 @@ from pymongo import Connection, DESCENDING
 from werkzeug.wsgi import ClosingIterator
 
 from .counter import RollingCounter, PeriodicCounter
+from .filters import json_filter, time_filter, count_filter
 
 
 app = Flask(__name__)
@@ -66,55 +66,9 @@ periodic_counters = sorted(periodic_counters, key=lambda c: c.period)
 counters = rolling_counters + periodic_counters
 
 
-@app.template_filter('json')
-def jsonfilter(value):
-    return json.dumps(value)
-
-
-@app.template_filter()
-def count_format(value):
-    count = float(value)
-    base = 1000
-    prefixes = [
-        ('K'),
-        ('M'),
-        ('G'),
-        ('T'),
-        ('P'),
-        ('E'),
-        ('Z'),
-        ('Y')
-    ]
-    if count < base:
-        return '%.1f' % count
-    else:
-        for i, prefix in enumerate(prefixes):
-            unit = base ** (i + 2)
-            if count < unit:
-                return '%.1f %s' % ((base * count / unit), prefix)
-        return '%.1f %s' % ((base * count / unit), prefix)
-
-
-@app.template_filter()
-def time_format(value):
-    time = float(value)
-    if time < 1000:
-        return '%.1f ms' % time
-    else:
-        time = time / 1000
-    if time < 60:
-        return '%.1f sec' % time
-    else:
-        time = time / 60
-    if time < 60:
-        return '%.1f min' % time
-    else:
-        time = time / 60
-    if time < 24:
-        return '%.1f hours' % time
-    else:
-        time = time / 24
-        return'%.1f days' % time
+app.jinja_env.filters['json'] = json_filter
+app.jinja_env.filters['time'] = time_filter
+app.jinja_env.filters['count'] = count_filter
 
 
 def current_url(**updates):
