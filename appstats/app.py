@@ -1,5 +1,6 @@
 # encoding: utf-8
 
+import json
 import datetime
 from time import mktime
 from copy import deepcopy
@@ -21,7 +22,8 @@ if not app.config.from_envvar('APPSTATS_SETTINGS', silent=True):
     app.config.from_pyfile('/etc/appstats.cfg', silent=True)
     app.config.from_pyfile(expanduser('~/.appstats.cfg'), silent=True)
 
-fields = deepcopy(app.config['FIELDS'])
+time_fields = deepcopy(app.config['TIME_FIELDS'])
+fields = app.config['FIELDS'] + time_fields
 if 'NUMBER' not in [field['key'] for field in fields]:
     fields.insert(0, dict(key='NUMBER', name='NUMBER',
                           format=None, visible=True))
@@ -62,6 +64,11 @@ periodic_counters.append(PeriodicCounter(divider=1, redis_db=redis_db,
 periodic_counters = sorted(periodic_counters, key=lambda c: c.period)
 
 counters = rolling_counters + periodic_counters
+
+
+@app.template_filter('json')
+def jsonfilter(value):
+    return json.dumps(value)
 
 
 @app.template_filter()
@@ -169,7 +176,6 @@ def main_page(app_id):
 
 @app.route('/info/<app_id>/<name>/')
 def info_page(app_id, name):
-    field = request.args.get('selected_field', 'NUMBER')
     hours = request.args.get('hours', 6, int)
     # Starting datetime of needed data
     starting_from = datetime.datetime.utcnow() - datetime.timedelta(hours=hours)
@@ -187,29 +193,46 @@ def info_page(app_id, name):
                                     'date': {'$gt': starting_from}})
     docs = docs.sort('date')
     tz = pytz.timezone('Europe/Kiev')
-    data = []
+    # Prepare list of rows for each time_field
+    time_data = [[] for _ in time_fields]
+    num_data = []
     # If docs is empty, return zero value on current datetime.
     if docs.count() == 0:
         date = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
         date = date.astimezone(tz)
-        data = [[mktime(date.timetuple()) * 1000, 0]]
+        date = mktime(date.timetuple()) * 1000
+        num_data = [[date, 0]]
+        time_data = [[[date, 0]]]
     # For each doc localize date, transform timestamp from seconds to
-    # milliseconds and append list [data, value] to data
+    # milliseconds and append list [date, value] to data
     for doc in docs:
         date = doc['date'].replace(tzinfo=pytz.utc)
         date = date.astimezone(tz)
+        date = mktime(date.timetuple()) * 1000
+
         if doc['NUMBER'] == 0:
-            value = 0
-        else:
-            value = doc[field]
-            if field != 'NUMBER':
+            num_data.append([date, None])
+            for row in time_data:
+                row.append([date, None])
+            continue
+
+        req_per_sec = float(doc['NUMBER']) / (counter.interval * 60)
+        num_point = [date, req_per_sec]
+        num_data.append(num_point)
+        
+        for i, time_field in enumerate(time_fields):
+            key = time_field['key']
+            value = doc.get(key)
+            if value:
                 value = float(value) / doc['NUMBER']
-        point = [mktime(date.timetuple()) * 1000, value]
-        data.append(point)
-    return render_template('info_page.html', fields=fields, data=data,
-                           name=name, selected_field=field, hours=hours,
-                           selected_site=app_id, app_id=app_id,
-                           app_ids=app.config['APP_IDS'])
+            time_data[i].append([date, value])
+    num_data = [num_data]
+    # Get all names from time_fields and use tham as labels
+    time_labels = [f['name'] for f in time_fields]
+    return render_template('info_page.html', fields=fields, num_data=num_data,
+                           name=name, hours=hours, selected_site=app_id,
+                           app_id=app_id, app_ids=app.config['APP_IDS'],
+                           time_labels=time_labels, time_data=time_data)
 
 
 @app.route('/add/', methods=['POST'])

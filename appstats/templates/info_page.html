@@ -1,6 +1,7 @@
 {% extends "layout.html" %}
 {% block body %}
-    <script src="{{ url_for('static', filename='js/flotr2.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/jquery-1.7.2.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/highcharts.js') }}"></script>
     <form>
         <span name="hours_radio" class="btn-group" data-toggle="buttons-radio" onclick="_submit()">
             <button name="hours" value="6" class="btn {{ 'active' if hours == 6 else ''}}">6 hours</button>
@@ -9,50 +10,90 @@
             <button name="hours" value="144" class="btn {{ 'active' if hours == 144 else ''}}">6 days</button>
             <button name="hours" value="720" class="btn {{ 'active' if hours == 720 else ''}}">30 days</button>
         </span>
-        <select name="selected_field" onchange="_submit()">
-            {% for field in fields %}
-                <option {{ 'selected' if field['key'] == selected_field else ''}} value="{{ field['key'] }}"> {{ field['name'] }} </option>
-            {% endfor %}
-        </select>
     </form>
-    <div style="height: 400px;" id="graph"></div>
+    <div style="height: 300px;" id="num_graph"></div>
+    <div style="height: 300px;" id="time_graph"></div>
 
     <script>
         function _submit() {
-            field = $('select[name="selected_field"]').val();
             hours = $('button[name="hours"].active').val();
             document.location.href="{{ url_for(request.endpoint, app_id=app_id, name=name)}}" +
             '?' + $.param([
-                {name : 'selected_field', value : field},
                 {name : 'hours', value : hours}
             ])
         }
 
-        function basic_time(container, data, field, name) {
-            var options;
+        function draw_graph(table, names, container_id, title) {
+            var chart;
+            var data = []
 
-            options = {
-                xaxis : {
-                    mode : 'time',
-                    labelsAngle : 45,
-                    timeMode : 'local'
+            data.push({
+                name: names[0],
+                data: table[0]
+            })
+            for (var i=1; i < table.length; i++) {
+                data.push(
+                {
+                    stacking: 'normal',
+                    name: names[i],
+                    data: table[i]
+                }
+                )
+            }
+
+            Highcharts.setOptions({
+                global: {
+                    useUTC: false
+                }
+            });
+
+            chart = new Highcharts.Chart({
+                chart: {
+                    renderTo: container_id,
+                    type: 'area',
+                    spacingRight: 20
                 },
-                yaxis : {
-                    autoscale : true
+                title: {
+                    text: title
                 },
-                title : name
-            };
+                xAxis: {
+                    type: 'datetime',
+                    title: {
+                        text: null
+                    }
+                },
+                yAxis: {
+                    title: {
+                        text: null
+                    },
+                    min: 0.6,
+                    startOnTick: false,
+                    showFirstLabel: false
+                },
+                legend: {
+                    enabled: true
+                },
+                plotOptions: {
+                    area: {
+                        fillOpacity: 1,
+                        lineWidth: 1,
+                        marker: {
+                            enabled: false,
+                        },
+                        enableMouseTracking: false,
+                        shadow: false,
+                    },
+                    series: {
+                        animation: false,
+                    },
+                },
 
-            Flotr.draw(
-                container,
-                [{ data : data, label : field, lines : { fill : true } }],
-                options
-            );
+                series: data,
+            });
+            
+        };
 
-        }
-
-        container = (document.getElementById('graph'));
-        basic_time(container, {{ data }}, '{{ selected_field }}', '{{ name }}');
+        draw_graph({{ num_data|json }}, {{ ['NUMBER / sec']|safe }}, 'num_graph', '{{ name }}');
+        draw_graph({{ time_data|json }}, {{ time_labels|safe }}, 'time_graph', '{{ name }}');
     </script>
-    <script src="{{ url_for('static', filename='js/jquery-1.7.2.min.js') }}"></script>
 {% endblock %}

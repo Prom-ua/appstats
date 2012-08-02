@@ -172,7 +172,7 @@ class PeriodicCounter(object):
         self.prefix = redis_prefix
         self.divider = divider
         self.period = period
-        self._interval = 60 / divider
+        self.interval = 60 / divider
 
     def _get_app_ids(self):
         app_ids = set()
@@ -219,7 +219,7 @@ class PeriodicCounter(object):
         # Get current utc datetime rounded to interval
         now = datetime.utcnow()
         new_time = time(hour=now.hour,
-                        minute=(now.minute / self._interval * self._interval))
+                        minute=(now.minute / self.interval * self.interval))
         now = datetime.combine(now.date(), new_time)
         if prev_upd:
             prev_upd = int(prev_upd) # Get previous timestamp
@@ -227,13 +227,13 @@ class PeriodicCounter(object):
         else:
             # If there isn't prev_upd in redis,
             # use 'one interval before current time' variable instead
-            prev_upd = now - timedelta(minutes=self._interval)
+            prev_upd = now - timedelta(minutes=self.interval)
             # Get unix utc timestamp
             prev_upd_unix = timegm(prev_upd.utctimetuple())
             self.redis_db.set(prev_upd_key, prev_upd_unix)
         delta = now - prev_upd
         # 24 * 60 = 1440
-        passed_intervals = (delta.days * 1440 + delta.seconds / 60) / self._interval
+        passed_intervals = (delta.days * 1440 + delta.seconds / 60) / self.interval
         if passed_intervals == 0:
             # Too early, exiting
             return
@@ -250,7 +250,7 @@ class PeriodicCounter(object):
                     # For each passed interval add separate doc with the specific date
                     docs = []
                     for offset_scale in xrange(passed_intervals):
-                        offset = self._interval * offset_scale
+                        offset = self.interval * offset_scale
                         date = now - timedelta(minutes=offset)
                         doc['date'] = date
                         docs.append(doc.copy())
