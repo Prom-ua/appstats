@@ -184,11 +184,7 @@ def info_page(app_id, name):
     # Get all names from time_fields and use tham as labels
     time_labels = [f['name'] for f in time_fields]
 
-    doc = mongo_db.appstats_docs.find({'app_id': app_id, 'name': name})
-    if doc.count() == 0:
-        doc = {}
-    else:
-        doc = doc.next()
+    doc = mongo_db.appstats_docs.find_one({'app_id': app_id, 'name': name}) or {}
 
     return render_template('info_page.html', fields=visible_fields, doc=doc,
                            num_data=num_data, name=name, hours=hours,
