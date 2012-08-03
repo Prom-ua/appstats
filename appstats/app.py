@@ -13,7 +13,7 @@ from pymongo import Connection, DESCENDING
 from werkzeug.wsgi import ClosingIterator
 
 from .counter import RollingCounter, PeriodicCounter
-from .filters import json_filter, time_filter, count_filter
+from .filters import json_filter, time_filter, count_filter, default_filter
 
 
 app = Flask(__name__)
@@ -70,6 +70,7 @@ counters = rolling_counters + periodic_counters
 app.jinja_env.filters['json'] = json_filter
 app.jinja_env.filters['time'] = time_filter
 app.jinja_env.filters['count'] = count_filter
+app.jinja_env.filters['default'] = default_filter
 
 
 def current_url(**updates):

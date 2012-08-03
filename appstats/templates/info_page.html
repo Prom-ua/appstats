@@ -25,26 +25,30 @@
                     {% for field in fields %}
                         <tr>
                             <td>{{ field['name'] }}</td>
+                            {% set hour_aver = doc.get('%s_%s' % (field['key'], 'hour_aver')) %}
+                            {% set day_aver = doc.get('%s_%s' % (field['key'], 'day_aver')) %}
+                            {% set hour = doc.get('%s_%s' % (field['key'], 'hour')) %}
+                            {% set day = doc.get('%s_%s' % (field['key'], 'day')) %}
                             {% if field['format'] == 'time' %}
-                                <td> {{ doc.setdefault('%s_%s' % (field['key'], 'hour_aver'), 0.0) | time }} </td>
-                                <td> {{ doc.setdefault('%s_%s' % (field['key'], 'day_aver'), 0.0) | time }} </td>
-                                <td> {{ doc.setdefault('%s_%s' % (field['key'], 'hour'), 0.0) | time }} </td>
-                                <td> {{ doc.setdefault('%s_%s' % (field['key'], 'day'), 0.0) | time }} </td>
+                                <td> {{ hour_aver|time }} </td>
+                                <td> {{ day_aver|time }} </td>
+                                <td> {{ hour|time }} </td>
+                                <td> {{ day|time }} </td>
                             {% elif field['format'] == 'filesize' %}
-                                <td> {{ doc.setdefault('%s_%s' % (field['key'], 'hour_aver'), 0.0) | filesizeformat }} </td>
-                                <td> {{ doc.setdefault('%s_%s' % (field['key'], 'day_aver'), 0.0) | filesizeformat }} </td>
-                                <td> {{ doc.setdefault('%s_%s' % (field['key'], 'hour'), 0.0) | filesizeformat }} </td>
-                                <td> {{ doc.setdefault('%s_%s' % (field['key'], 'day'), 0.0) | filesizeformat }} </td>
+                                <td> {{ hour_aver|filesizeformat }} </td>
+                                <td> {{ day_aver|filesizeformat }} </td>
+                                <td> {{ hour|filesizeformat }} </td>
+                                <td> {{ day|filesizeformat }} </td>
                             {% elif field['format'] == 'count' %}
-                                <td> {{ doc.setdefault('%s_%s' % (field['key'], 'hour_aver'), 0.0) | count }} </td>
-                                <td> {{ doc.setdefault('%s_%s' % (field['key'], 'day_aver'), 0.0) | count }} </td>
-                                <td> {{ doc.setdefault('%s_%s' % (field['key'], 'hour'), 0.0) | count }} </td>
-                                <td> {{ doc.setdefault('%s_%s' % (field['key'], 'day'), 0.0) | count }} </td>
+                                <td> {{ hour_aver|count }} </td>
+                                <td> {{ day_aver|count }} </td>
+                                <td> {{ hour|count }} </td>
+                                <td> {{ day|count }} </td>
                             {% else %}
-                                <td> {{ doc.setdefault('%s_%s' % (field['key'], 'hour_aver'), 0.0) }} </td>
-                                <td> {{ doc.setdefault('%s_%s' % (field['key'], 'day_aver'), 0.0) }} </td>
-                                <td> {{ doc.setdefault('%s_%s' % (field['key'], 'hour'), 0.0) }} </td>
-                                <td> {{ doc.setdefault('%s_%s' % (field['key'], 'day'), 0.0) }} </td>
+                                <td> {{ hour_aver|default }} </td>
+                                <td> {{ day_aver|default }} </td>
+                                <td> {{ hour|default }} </td>
+                                <td> {{ day|default }} </td>
                             {% endif %}
                         </tr>
                     {% endfor %}

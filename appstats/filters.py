@@ -8,6 +8,8 @@ def json_filter(value):
 
 
 def count_filter(value):
+    if value is None:
+        return ""
     count = float(value)
     base = 1000
     prefixes = [
@@ -31,6 +33,8 @@ def count_filter(value):
 
 
 def time_filter(value):
+    if value is None:
+        return ""
     time = float(value)
     if time < 1000:
         return '%.1f ms' % time
@@ -51,3 +55,7 @@ def time_filter(value):
         return'%.1f d' % time
 
 
+def default_filter(value):
+    if value is None:
+        return ""
+    return value

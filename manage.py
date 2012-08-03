@@ -50,7 +50,7 @@ def update():
             h_aver_counts = {}
             if req_count == 0:
                 for field in counts:
-                    h_aver_counts[field] = 0.0
+                    h_aver_counts[field] = None
                 continue
             for field in counts:
                 if field == 'NUMBER':
@@ -68,7 +68,7 @@ def update():
             d_aver_counts = {}
             if req_count == 0:
                 for field in counts:
-                    d_aver_counts[field] = 0.0
+                    d_aver_counts[field] = None
                 continue
             for field in counts:
                 if  field == 'NUMBER':
