@@ -28,6 +28,7 @@ if 'NUMBER' not in [field['key'] for field in fields]:
     fields.insert(0, dict(key='NUMBER', name='NUMBER',
                           format=None, visible=True))
 fields_keys = [field['key'] for field in fields]
+visible_fields = filter(itemgetter('visible'), fields)
 
 redis_db = redis.Redis(host=app.config['REDIS_HOST'],
                        port=app.config['REDIS_PORT'],
@@ -73,8 +74,8 @@ app.jinja_env.filters['count'] = count_filter
 
 def current_url(**updates):
     args = request.view_args.copy()
-    args.update(updates)
     args.update(request.args)
+    args.update(updates)
     return url_for(request.endpoint, **args)
 app.jinja_env.globals['current_url'] = current_url
 
@@ -108,9 +109,8 @@ def add_data(data):
 def main_page(app_id):
     sort_by_field = request.args.get('sort_by_field', 'NUMBER')
     sort_by_period = request.args.get('sort_by_period', 'hour')
-    number_of_lines = request.args.get('number_of_lines', 20, int)
+    number_of_lines = request.args.get('number_of_lines', 10, int)
     selected_field = request.args.get('selected_field', 'NUMBER')
-    visible_fields = filter(itemgetter('visible'), fields)
 
     docs = mongo_db.appstats_docs.find({'app_id': app_id})
     if sort_by_field == 'name':
@@ -183,9 +183,13 @@ def info_page(app_id, name):
     num_data = [num_data]
     # Get all names from time_fields and use tham as labels
     time_labels = [f['name'] for f in time_fields]
-    return render_template('info_page.html', fields=fields, num_data=num_data,
-                           name=name, hours=hours, selected_site=app_id,
-                           app_id=app_id, app_ids=app.config['APP_IDS'],
+
+    doc = mongo_db.appstats_docs.find({'app_id': app_id, 'name': name}).next()
+
+    return render_template('info_page.html', fields=visible_fields, doc=doc,
+                           num_data=num_data, name=name, hours=hours,
+                           selected_site=app_id, app_id=app_id,
+                           app_ids=app.config['APP_IDS'],
                            time_labels=time_labels, time_data=time_data)
 
 

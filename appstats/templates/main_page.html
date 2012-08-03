@@ -1,16 +1,17 @@
 {% extends "layout.html" %}
 {% block body %}
-    <form class="pull-right">
-       <input name="sort_by_field" type="hidden" value="{{ sort_by_field }}"/>
-        <input name="sort_by_period" type="hidden" value="{{ sort_by_period }}"/>
-        <input name="selected_field" type="hidden" value="{{ selected_field }}"/>
-        <span class="btn-group" data-toggle="buttons-radio">
-            <button name="number_of_lines" value="20" class="btn {{ 'active' if number_of_lines == 20 else ''}}">20</button>
-            <button name="number_of_lines" value="50" class="btn {{ 'active' if number_of_lines == 50 else ''}}">50</button>
-            <button name="number_of_lines" value="100" class="btn {{ 'active' if number_of_lines == 100 else ''}}">100</button>
-        </span>
-    </form>
-    <table class="table table-bordered table-striped table-condensed">
+    <div class="btn-group pull-right">
+        <button class="btn dropdown-toggle" data-toggle="dropdown">
+            {{ number_of_lines }}
+            <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+            <li><a href="{{ current_url(number_of_lines=10) }}">10</a></li>
+            <li><a href="{{ current_url(number_of_lines=25) }}">25</a></li>
+            <li><a href="{{ current_url(number_of_lines=50) }}">50</a></li>
+        </ul>
+    </div>
+    <table class="table table-appstats table-bordered table-striped table-condensed">
         <thead>
             <tr>
                 {% if sort_by_field == 'name' %}
@@ -42,7 +43,7 @@
         </thead>
             <tbody>
                 <tr>
-                    <td> </td>
+                    <td></td>
                     {% for field in fields %}
                         {% if field['key'] == sort_by_field and sort_by_period == 'hour_aver' %}
                                 <td> Avg(1h) </td>
@@ -101,7 +102,12 @@
                 </tr>
                 {% for doc in docs %}
                     <tr>
-                        <td> <a href="{{ url_for('info_page', name=doc['name'], app_id=app_id) }}"> {{ doc['name'] }} </a> </td>
+                        <td colspan="{{ fields|length + 4 }}">
+                            <a href="{{ url_for('info_page', name=doc['name'], app_id=app_id) }}"> {{ doc['name'] }} </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
                         {% for field in fields %}
                             {% if field['format'] == 'time' %}
                                 <td> {{ doc.setdefault('%s_%s' % (field['key'], 'hour_aver'), 0.0) | time }} </td>
@@ -137,4 +143,5 @@
                 {% endfor %}
             </tbody>
     </table>
+    <script src="{{ url_for('static', filename='js/bootstrap.js') }}"></script>
 {% endblock %}

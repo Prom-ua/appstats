@@ -2,10 +2,10 @@ body {
     padding-top: 45px;
 }
 
-.table td {
+.table-appstats td {
   min-width: 70px;
 }
 
-.table th {
+.table-appstats th {
   width: 100%;
 }
