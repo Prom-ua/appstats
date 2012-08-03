@@ -73,10 +73,10 @@ app.jinja_env.filters['count'] = count_filter
 
 
 def current_url(**updates):
-    args = request.view_args.copy()
-    args.update(request.args)
-    args.update(updates)
-    return url_for(request.endpoint, **args)
+    kwargs = request.view_args.copy()
+    kwargs.update(request.args)
+    kwargs.update(updates)
+    return url_for(request.endpoint, **kwargs)
 app.jinja_env.globals['current_url'] = current_url
 
 
@@ -184,7 +184,11 @@ def info_page(app_id, name):
     # Get all names from time_fields and use tham as labels
     time_labels = [f['name'] for f in time_fields]
 
-    doc = mongo_db.appstats_docs.find({'app_id': app_id, 'name': name}).next()
+    doc = mongo_db.appstats_docs.find({'app_id': app_id, 'name': name})
+    if doc.count() == 0:
+        doc = {}
+    else:
+        doc = doc.next()
 
     return render_template('info_page.html', fields=visible_fields, doc=doc,
                            num_data=num_data, name=name, hours=hours,

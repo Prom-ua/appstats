@@ -37,17 +37,17 @@ def time_filter(value):
     else:
         time = time / 1000
     if time < 60:
-        return '%.1f sec' % time
+        return '%.1f s' % time
     else:
         time = time / 60
     if time < 60:
-        return '%.1f min' % time
+        return '%.1f m' % time
     else:
         time = time / 60
     if time < 24:
-        return '%.1f hours' % time
+        return '%.1f h' % time
     else:
         time = time / 24
-        return'%.1f days' % time
+        return'%.1f d' % time
 
 
