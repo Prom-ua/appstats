@@ -136,7 +136,7 @@ class RollingCounter(object):
         if ',' in app_id:
             raise ValueError("App_id can't contain ',' (comma)")
         if field not in self.fields:
-            raise ValueError("No such field: %s" % field)
+            return
 
         last_val_key = self._make_key(self.last_val_key_format, app_id=app_id,
                                       name=name, field=field)
@@ -206,7 +206,7 @@ class PeriodicCounter(object):
         if ',' in app_id:
             raise ValueError("App_id can't contain ',' (comma)")
         if field not in self.fields:
-            raise ValueError("No such field: %s" % field)
+            return
 
         key = self._make_key(self.key_format, app_id=app_id, name=name,
                              field=field)
