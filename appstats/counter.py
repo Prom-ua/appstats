@@ -83,17 +83,20 @@ class RollingCounter(object):
                     # Check whether it is need to be updated
                     if passed_time > self.part:
                         num_of_new_parts = int(passed_time) / self.part
-                        val_per_part = int(last_val / passed_time * self.part)
+                        val_per_part = last_val // num_of_new_parts
 
-                        # For each new part perform a shift,
+                        # For each new part (without the final) perform a shift,
                         # filling a new cell with the value per one part
-                        for i in xrange(num_of_new_parts):
+                        for i in xrange(num_of_new_parts - 1):
                             pl.lpop(key)
                             pl.rpush(key, val_per_part)
+                        # The final one will contain the rest
+                        rest = last_val - (num_of_new_parts - 1) * val_per_part
+                        pl.lpop(key)
+                        pl.rpush(key, rest)
 
-                        # New last_val = rest
-                        last_val -= num_of_new_parts * val_per_part
-                        pl.set(last_val_key, last_val)
+                        # New last_val = 0
+                        pl.set(last_val_key, 0)
 
                         # Evaluating time correction
                         rest_time = passed_time - num_of_new_parts * self.part
@@ -250,13 +253,16 @@ class PeriodicCounter(object):
                     # For each passed interval add separate doc with the specific date
                     docs = []
                     for offset_scale in xrange(passed_intervals):
+                        # The last one will contain the rest
+                        if offset_scale == passed_intervals - 1:
+                            rest = val - (passed_intervals - 1) * val_per_interval
+                            doc[field] = rest
                         offset = self.interval * offset_scale
                         date = now - timedelta(minutes=offset)
                         doc['date'] = date
                         docs.append(doc.copy())
-                    # New val = rest
-                    val -= passed_intervals * val_per_interval
-                    self.redis_db.set(key, val)
+                    # New val = 0
+                    self.redis_db.set(key, 0)
                 self.collection.insert(docs)
             prev_upd = timegm(now.utctimetuple())
             self.redis_db.set(prev_upd_key, prev_upd)
