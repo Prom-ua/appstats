@@ -13,15 +13,17 @@ manager = Manager(app)
 
 
 @manager.command
-def strip_db():
-    max_age = 182 # Half-year
-    oldest_date = datetime.utcnow() - timedelta(max_age)
+def strip_db(days=182):
+    "Remove old data from db."
+    days = int(days)
+    oldest_date = datetime.utcnow() - timedelta(days)
     for periodic_counter in periodic_counters:
         periodic_counter.collection.remove({'date': {'$lt': oldest_date}})
 
 
 @manager.command
 def clear():
+    "Delete all data from redis and mongo dbs"
     # Flush all redis records with appstats prefix
     keys = redis_db.keys('%s*' % REDIS_PREFIX)
     redis_db.delete(*keys)
@@ -34,6 +36,7 @@ def clear():
 
 @manager.command
 def update():
+    "Update all counters, database data, refresh cache"
     for counter in counters:
         counter.update()
 
