@@ -252,19 +252,15 @@ class PeriodicCounter(object):
                 for field in self.fields:
                     key = self._make_key(self.key_format, app_id=app_id,
                                          name=name, field=field)
-                    # Restore value by dividing it on 10000000
                     val = self.redis_db.get(key)
-                    val = int(val) / 1000000 if val else 0
+                    # Restore value by dividing it on 10000000
+                    val = float(val) / 1000000. if val else 0.0
                     val_per_interval = val / passed_intervals
                     doc[field] = val_per_interval
 
                     # For each passed interval add separate doc with the specific date
                     docs = []
                     for offset_scale in xrange(passed_intervals):
-                        # The last one will contain the rest
-                        if offset_scale == passed_intervals - 1:
-                            rest = val - (passed_intervals - 1) * val_per_interval
-                            doc[field] = rest
                         offset = self.interval * offset_scale
                         date = now - timedelta(minutes=offset)
                         doc['date'] = date
