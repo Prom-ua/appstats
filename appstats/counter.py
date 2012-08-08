@@ -128,6 +128,8 @@ class RollingCounter(object):
                     last_val = int(pl_res.pop(0) or '0')
                     count = sum(map(int, pl_res.pop(0)))
                     count += last_val
+                    # Restore value by dividing it on 10000000
+                    count /= 1000000.
                     counts[field] = count
                 res[app_id][name] = counts
         # res format example: {'app_id1': {'name1': {'field1': 1, 'field2': 2}}}
@@ -143,6 +145,8 @@ class RollingCounter(object):
 
         last_val_key = self._make_key(self.last_val_key_format, app_id=app_id,
                                       name=name, field=field)
+        # Hook for more accurate storing
+        increment *= 1000000
         self.db.incr(last_val_key, int(increment))
 
 
@@ -213,6 +217,8 @@ class PeriodicCounter(object):
 
         key = self._make_key(self.key_format, app_id=app_id, name=name,
                              field=field)
+        # Hook for more accurate storing
+        increment *= 1000000
         self.redis_db.incr(key, int(increment))
 
     def update(self):
@@ -246,7 +252,8 @@ class PeriodicCounter(object):
                 for field in self.fields:
                     key = self._make_key(self.key_format, app_id=app_id,
                                          name=name, field=field)
-                    val = int(self.redis_db.get(key) or '0')
+                    # Restore value by dividing it on 10000000
+                    val = int(self.redis_db.get(key) / 1000000. or '0')
                     val_per_interval = val / passed_intervals
                     doc[field] = val_per_interval
 
