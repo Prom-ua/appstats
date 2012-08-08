@@ -253,7 +253,8 @@ class PeriodicCounter(object):
                     key = self._make_key(self.key_format, app_id=app_id,
                                          name=name, field=field)
                     # Restore value by dividing it on 10000000
-                    val = int(self.redis_db.get(key) / 1000000. or '0')
+                    val = self.redis_db.get(key)
+                    val = int(val) / 1000000 if val else 0
                     val_per_interval = val / passed_intervals
                     doc[field] = val_per_interval
 
