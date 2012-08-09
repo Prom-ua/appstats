@@ -36,18 +36,24 @@ def time_filter(value):
     if value is None:
         return ""
     time = float(value)
+    # Transform secs into ms
+    time = value * 1000
+    if time < 1000:
+        return '%.1f ms' % time
+    else:
+        time /= 1000
     if time < 60:
         return '%.1f s' % time
     else:
-        time = time / 60
+        time /= 60
     if time < 60:
         return '%.1f m' % time
     else:
-        time = time / 60
+        time /= 60
     if time < 24:
         return '%.1f h' % time
     else:
-        time = time / 24
+        time /= 24
         return'%.1f d' % time
 
 
