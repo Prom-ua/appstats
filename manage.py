@@ -4,18 +4,16 @@ from datetime import datetime, timedelta
 
 from flaskext.script import Manager
 
-from appstats.app import (app, last_hour_counter, last_day_counter,
-    periodic_counters, counters, mongo_db, redis_db, REDIS_PREFIX
-)
+from appstats.app import app, last_hour_counter, last_day_counter, redis_db
+from appstats.app import periodic_counters, counters, REDIS_PREFIX, mongo_db
 
 
 manager = Manager(app)
 
 
-@manager.command
-def strip_db(days=182):
-    "Remove old data from db."
-    days = int(days)
+@manager.option('-d', '--days', dest='days', type=int, default=182)
+def strip_db(days):
+    """ Remove data older then specified number of days from db. """
     oldest_date = datetime.utcnow() - timedelta(days)
     for periodic_counter in periodic_counters:
         periodic_counter.collection.remove({'date': {'$lt': oldest_date}})
@@ -23,7 +21,7 @@ def strip_db(days=182):
 
 @manager.command
 def clear():
-    "Delete all data from redis and mongo dbs"
+    """ Delete all data from redis and mongo dbs. """
     # Flush all redis records with appstats prefix
     keys = redis_db.keys('%s*' % REDIS_PREFIX)
     redis_db.delete(*keys)
@@ -36,7 +34,7 @@ def clear():
 
 @manager.command
 def update():
-    "Update all counters, database data, refresh cache"
+    """ Update all counters, database data, refresh cache. """
     for counter in counters:
         counter.update()
 
