@@ -35,9 +35,8 @@ def count_filter(value):
 def time_filter(value):
     if value is None:
         return ""
-    time = float(value)
     # Transform secs into ms
-    time = value * 1000
+    time = float(value) * 1000
     if time < 1000:
         return '%.1f ms' % time
     else:
