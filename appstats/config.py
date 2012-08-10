@@ -11,8 +11,8 @@ APP_IDS = [dict(key='prom.ua', name='Prom.ua'),
            dict(key='deal.by', name='Deal.by')]
 
 FIELDS = [
-    dict(key='NUMBER',    name='NUMBER',  format=None,    visible=True),
-    dict(key='cpu_time',  name='CPU',     format='time',  visible=True),
+    dict(key='NUMBER',    name='NUMBER',  format='count',   visible=True),
+    dict(key='cpu_time',  name='CPU',     format='time',    visible=True),
 ]
 
 TIME_FIELDS = [
