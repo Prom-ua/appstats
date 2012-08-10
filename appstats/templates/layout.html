@@ -11,7 +11,7 @@
         <div class="navbar navbar-fixed-top">
             <div class=navbar-inner>
                 <div class=container>
-                    <a class="brand" href="{{ url_for('main_page') }}">Appstats</a>
+                    <a class="brand" href="{{ url_for('main_page', app_id=app_id) }}">Appstats</a>
                     <div class="nav-collapse collapse">
                         <ul class=nav>
                             {% for def_app_id in app_ids %}
