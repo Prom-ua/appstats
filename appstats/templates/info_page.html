@@ -97,7 +97,8 @@
             chart = new Highcharts.Chart({
                 chart: {
                     renderTo: container_id,
-                    type: 'areaspline',
+                    type: 'area',
+                    zoomType: 'y',
                     spacingRight: 20
                 },
                 title: {
@@ -117,17 +118,21 @@
                     showFirstLabel: false
                 },
                 legend: {
-                    enabled: true
+                    borderWidth: 0,
+                    enabled: true,
+                    padding: 6,
+                    margin: 5,
+                    symbolWidth: 45,
                 },
                 plotOptions: {
-                    areaspline: {
+                    area: {
                         fillOpacity: 1,
-                        lineWidth: 1,
                         marker: {
                             enabled: false,
                         },
                         enableMouseTracking: false,
                         shadow: false,
+                        lineWidth: 0,
                     },
                     series: {
                         animation: false,
