@@ -9,3 +9,7 @@ body {
 .appstats-table th {
   width: 100%;
 }
+
+.num-of-lines-switcher {
+    padding-bottom: 6px
+}
