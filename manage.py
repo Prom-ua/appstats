@@ -57,9 +57,9 @@ def update():
             for field in counts:
                 if field == 'NUMBER':
                     req_per_hour = float(counts[field]) / last_hour_counter.interval
-                    h_aver_counts[field] = round(req_per_hour, 1)
+                    h_aver_counts[field] = req_per_hour
                 else:
-                    h_aver_counts[field] = round(float(counts[field]) / req_count, 1)
+                    h_aver_counts[field] = counts[field] / req_count
             hour_aver_data[app_id][name] = h_aver_counts
 
     # Calculating day average data
@@ -75,9 +75,9 @@ def update():
             for field in counts:
                 if  field == 'NUMBER':
                     req_per_day = float(counts[field]) / last_day_counter.interval
-                    d_aver_counts[field] = round(req_per_day, 1)
+                    d_aver_counts[field] = req_per_day
                 else:
-                    d_aver_counts[field] = round(float(counts[field]) / req_count, 1)
+                    d_aver_counts[field] = counts[field] / req_count
             day_aver_data[app_id][name] = d_aver_counts
 
     # Transforming data into flat form
