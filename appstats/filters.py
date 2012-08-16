@@ -38,7 +38,7 @@ def time_filter(value):
     # Transform secs into microseconds
     time = float(value) * 1000000
     if time < 1000:
-        return u"%.1f µs" % time
+        return u"%d µs" % time
     else:
         time /= 1000
     if time < 1000:
