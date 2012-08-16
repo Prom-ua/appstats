@@ -24,7 +24,8 @@ def clear():
     """ Delete all data from redis and mongo dbs. """
     # Flush all redis records with appstats prefix
     keys = redis_db.keys('%s*' % REDIS_PREFIX)
-    redis_db.delete(*keys)
+    if keys:
+        redis_db.delete(*keys)
     # Drop mongo 'cache' collection
     mongo_db.drop_collection('appstats_docs')
     # Drop all mongo periodic stats collections
