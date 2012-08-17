@@ -17,10 +17,8 @@
                 {% if sort_by_field == 'name' %}
                     <th> NAME </th>
                 {% else %}
-                    <th> <a href="{{ url_for(request.endpoint, sort_by_field='name',
-                                             sort_by_period='hour',
-                                             number_of_lines=number_of_lines,
-                                             selected_field=selected_field) }}">
+                    <th> <a href="{{ current_url(sort_by_field='name',
+                                                 sort_by_period='hour') }}">
                             NAME
                         </a>
                     </th>
@@ -29,11 +27,7 @@
                     {% if field['key'] == selected_field %}
                         <th COLSPAN="4"> {{ field['name'] }} </th>
                     {% else %}
-                        <th><a href="{{ url_for(request.endpoint, app_id=app_id,
-                                                sort_by_field=sort_by_field,
-                                                sort_by_period=sort_by_period,
-                                                number_of_lines=number_of_lines,
-                                                selected_field=field['key']) }}">
+                        <th><a href="{{ current_url(selected_field=field['key']) }}">
                                 {{ field['name'] }}
                             </a>
                         </th>
@@ -48,11 +42,8 @@
                         {% if field['key'] == sort_by_field and sort_by_period == 'hour_aver' %}
                                 <td> Avg(1h) </td>
                             {% else %}
-                                <td><a href="{{ url_for(request.endpoint, app_id=app_id,
-                                                        sort_by_field=field['key'],
-                                                        sort_by_period='hour_aver',
-                                                        number_of_lines=number_of_lines,
-                                                        selected_field=selected_field) }}">
+                                <td><a href="{{ current_url(sort_by_field=field['key'],
+                                                            sort_by_period='hour_aver') }}">
                                         Avg(1h)
                                     </a>
                                 </td>
@@ -62,11 +53,8 @@
                                 {% if field['key'] == sort_by_field and sort_by_period == 'day_aver' %}
                                     <td> Avg(24h) </td>
                                 {% else %}
-                                    <td><a href="{{ url_for(request.endpoint, app_id=app_id,
-                                                            sort_by_field=field['key'],
-                                                            sort_by_period='day_aver',
-                                                            number_of_lines=number_of_lines,
-                                                            selected_field=selected_field) }}">
+                                    <td><a href="{{ current_url(sort_by_field=field['key'],
+                                                                sort_by_period='day_aver') }}">
                                             Avg(24h)
                                         </a>
                                     </td>
@@ -75,11 +63,8 @@
                                 {% if field['key'] == sort_by_field and sort_by_period == 'hour' %}
                                     <td> 1h </td>
                                 {% else %}
-                                    <td><a href="{{ url_for(request.endpoint, app_id=app_id,
-                                                            sort_by_field=field['key'],
-                                                            sort_by_period='hour',
-                                                            number_of_lines=number_of_lines,
-                                                            selected_field=selected_field) }}">
+                                    <td><a href="{{ current_url(sort_by_field=field['key'],
+                                                                sort_by_period='hour') }}">
                                             1h
                                         </a>
                                     </td>
@@ -88,11 +73,8 @@
                                 {% if field['key'] == sort_by_field and sort_by_period == 'day' %}
                                     <td> 24h </td>
                                 {% else %}
-                                    <td><a href="{{ url_for(request.endpoint, app_id=app_id,
-                                                            sort_by_field=field['key'],
-                                                            sort_by_period='day',
-                                                            number_of_lines=number_of_lines,
-                                                            selected_field=selected_field) }}">
+                                    <td><a href="{{ current_url(sort_by_field=field['key'],
+                                                                sort_by_period='day') }}">
                                             24h
                                         </a>
                                     </td>
