@@ -85,6 +85,11 @@ class RollingCounter(object):
                         num_of_new_parts = int(passed_time) / self.part
                         val_per_part = last_val // num_of_new_parts
 
+                        # There is no need to pop and push the same values more
+                        # than self.parts times.
+                        if num_of_new_parts > self.parts:
+                            num_of_new_parts = self.parts
+
                         # For each new part (without the final) perform a shift,
                         # filling a new cell with the value per one part
                         for i in xrange(num_of_new_parts - 1):
