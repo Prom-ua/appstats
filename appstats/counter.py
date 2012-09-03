@@ -15,23 +15,26 @@ class RollingCounter(object):
       - 'redis_prefix' -- prefix used in each redis key to separate statistics
       data
       - 'interval' -- interval during which the counter stores the data
-      - 'parts' -- accuracy indicator, number of parts interval will split
+      - 'secs_per_part' -- accuracy indicator, determine the time range of 
+      one part in seconds
     """
 
-    last_val_key_format = '%(prefix)s,%(app_id)s,%(name)s,%(interval)s,%(parts)s,last_val,%(field)s'
-    updated_key_format = '%(prefix)s,%(app_id)s,%(name)s,%(interval)s,%(parts)s,updated,%(field)s'
-    key_format = '%(prefix)s,%(app_id)s,%(name)s,%(interval)s,%(parts)s,%(field)s'
+    last_val_key_format = '%(prefix)s,%(app_id)s,%(name)s,%(interval)s,%(secs_per_part)s,last_val,%(field)s'
+    updated_key_format = '%(prefix)s,%(app_id)s,%(name)s,%(interval)s,%(secs_per_part)s,updated,%(field)s'
+    key_format = '%(prefix)s,%(app_id)s,%(name)s,%(interval)s,%(secs_per_part)s,%(field)s'
 
-    def __init__(self, db, fields, redis_prefix, interval=3600, parts=60):
+    def __init__(self, db, fields, redis_prefix,
+                 interval=3600, secs_per_part=60):
         self.db = db
         self.prefix = redis_prefix
         self.interval = interval
-        self.parts = parts
+        self.secs_per_part = secs_per_part
+        self._num_of_parts = interval // secs_per_part
         self.fields = fields
 
     def _make_key(self, key_format, **kwargs):
         kwargs.update(prefix=self.prefix, interval=self.interval,
-                      parts=self.parts)
+                      secs_per_part=self.secs_per_part)
         return key_format % kwargs
 
     def _get_app_ids(self):
@@ -41,7 +44,9 @@ class RollingCounter(object):
         for key in self.db.keys(search_key):
             # Example key format:
             # appstats,prom.ua,path.to.module:Class.method,3600,60,last_val,CPU
-            prefix, app_id, name, interval, parts, suffix, field = key.split(',')
+            (prefix, app_id, name,
+             interval, secs_per_part,
+             suffix, field) = key.split(',')
             app_ids.add(app_id)
         return app_ids
 
@@ -52,7 +57,9 @@ class RollingCounter(object):
         for key in self.db.keys(search_key):
             # Example key format:
             # appstats,prom.ua,path.to.module:Class.method,3600,60,last_val,CPU
-            prefix, app_id, name, interval, parts, suffix, field = key.split(',')
+            (prefix, app_id, name,
+             interval, secs_per_part,
+             suffix, field) = key.split(',')
             names.add(name)
         return names
 
@@ -72,7 +79,7 @@ class RollingCounter(object):
                                                  field=field)
 
                     if self.db.llen(key) == 0:
-                        for i in xrange(self.interval / self.parts - 1):
+                        for i in xrange(self._num_of_parts - 1):
                             self.db.rpush(key, 0)
                         self.db.set(updated_key, now)
 
@@ -81,14 +88,14 @@ class RollingCounter(object):
                     passed_time = now - updated
 
                     # Check whether it is need to be updated
-                    if passed_time > self.parts:
-                        num_of_new_parts = int(passed_time) / self.parts
+                    if passed_time > self.secs_per_part:
+                        num_of_new_parts = int(passed_time) / self.secs_per_part
                         val_per_part = last_val // num_of_new_parts
 
                         # There is no need to pop and push the same values more
-                        # than self.parts times.
-                        if num_of_new_parts > self.parts:
-                            num_of_new_parts = self.parts
+                        # than self._num_of_parts times.
+                        if num_of_new_parts > self._num_of_parts:
+                            num_of_new_parts = self._num_of_parts
 
                         # For each new part (without the final) perform a shift,
                         # filling a new cell with the value per one part
@@ -104,7 +111,7 @@ class RollingCounter(object):
                         pl.set(last_val_key, 0)
 
                         # Evaluating time correction
-                        rest_time = passed_time - num_of_new_parts * self.parts
+                        rest_time = passed_time - num_of_new_parts * self.secs_per_part
                         pl.set(updated_key, now - rest_time)
         pl.execute()
 

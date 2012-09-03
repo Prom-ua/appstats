@@ -43,7 +43,7 @@ last_hour_counter = RollingCounter(db=redis_db, fields=fields_keys,
                                    redis_prefix=REDIS_PREFIX)
 last_day_counter = RollingCounter(db=redis_db, fields=fields_keys,
                                   redis_prefix=REDIS_PREFIX, interval=86400,
-                                  parts=3600)
+                                  secs_per_part=3600)
 rolling_counters = [last_hour_counter, last_day_counter]
 
 periodic_counters = []
