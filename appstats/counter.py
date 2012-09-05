@@ -95,11 +95,13 @@ class RollingCounter(object):
                         # There is no need to pop and push the same values more
                         # than self._num_of_parts times.
                         if num_of_new_parts > self._num_of_parts:
-                            num_of_new_parts = self._num_of_parts
+                            num_of_shifts = self._num_of_parts
+                        else:
+                            num_of_shifts = num_of_new_parts
 
                         # For each new part (without the final) perform a shift,
                         # filling a new cell with the value per one part
-                        for i in xrange(num_of_new_parts - 1):
+                        for i in xrange(num_of_shifts - 1):
                             pl.lpop(key)
                             pl.rpush(key, val_per_part)
                         # The final one will contain the rest
