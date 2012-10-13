@@ -84,13 +84,13 @@ class RollingCounter(object):
                         self.db.set(updated_key, now)
 
                     updated = float(self.db.get(updated_key))
-                    last_val = int(self.db.get(last_val_key) or '0')
+                    last_val = float(self.db.get(last_val_key) or '0.0')
                     passed_time = now - updated
 
                     # Check whether it is need to be updated
                     if passed_time > self.secs_per_part:
-                        num_of_new_parts = int(passed_time) / self.secs_per_part
-                        val_per_part = last_val // num_of_new_parts
+                        num_of_new_parts = int(passed_time // self.secs_per_part)
+                        val_per_part = last_val / num_of_new_parts
 
                         # There is no need to pop and push the same values more
                         # than self._num_of_parts times.
@@ -99,15 +99,11 @@ class RollingCounter(object):
                         else:
                             num_of_shifts = num_of_new_parts
 
-                        # For each new part (without the final) perform a shift,
+                        # For each new part perform a shift,
                         # filling a new cell with the value per one part
-                        for i in xrange(num_of_shifts - 1):
+                        for i in xrange(num_of_shifts):
                             pl.lpop(key)
                             pl.rpush(key, val_per_part)
-                        # The final one will contain the rest
-                        rest = last_val - (num_of_new_parts - 1) * val_per_part
-                        pl.lpop(key)
-                        pl.rpush(key, rest)
 
                         # New last_val = 0
                         pl.set(last_val_key, 0)
@@ -139,11 +135,9 @@ class RollingCounter(object):
             for name in names:
                 counts = {}
                 for field in self.fields:
-                    last_val = int(pl_res.pop(0) or '0')
-                    count = sum(map(int, pl_res.pop(0)))
+                    last_val = float(pl_res.pop(0) or '0.0')
+                    count = sum(map(float, pl_res.pop(0)))
                     count += last_val
-                    # Restore value by dividing it on 10000000
-                    count /= 1000000.
                     counts[field] = count
                 res[app_id][name] = counts
         # res format example: {'app_id1': {'name1': {'field1': 1, 'field2': 2}}}
@@ -159,9 +153,7 @@ class RollingCounter(object):
 
         last_val_key = self._make_key(self.last_val_key_format, app_id=app_id,
                                       name=name, field=field)
-        # Hook for more accurate storing
-        increment *= 1000000
-        self.db.incr(last_val_key, int(increment))
+        self.db.incrbyfloat(last_val_key, increment)
 
 
 class PeriodicCounter(object):
@@ -231,9 +223,7 @@ class PeriodicCounter(object):
 
         key = self._make_key(self.key_format, app_id=app_id, name=name,
                              field=field)
-        # Hook for more accurate storing
-        increment *= 1000000
-        self.redis_db.incr(key, int(increment))
+        self.redis_db.incrbyfloat(key, increment)
 
     def update(self):
         prev_upd_key = self._make_key(self.prev_upd_key_format)
@@ -256,7 +246,8 @@ class PeriodicCounter(object):
             self.redis_db.set(prev_upd_key, prev_upd_unix)
         delta = now - prev_upd
         # 24 * 60 = 1440
-        passed_intervals = (delta.days * 1440 + delta.seconds / 60) / self.interval
+        passed_intervals = (delta.days * 1440 +
+                            delta.seconds / 60) / self.interval
         if passed_intervals == 0:
             # Too early, exiting
             return
@@ -267,12 +258,12 @@ class PeriodicCounter(object):
                     key = self._make_key(self.key_format, app_id=app_id,
                                          name=name, field=field)
                     val = self.redis_db.get(key)
-                    # Restore value by dividing it on 10000000
-                    val = float(val) / 1000000. if val else 0.0
+                    val = float(val) if val else 0.0
                     val_per_interval = val / passed_intervals
                     doc[field] = val_per_interval
 
-                    # For each passed interval add separate doc with the specific date
+                    # For each passed interval
+                    # add separate doc with the specific date
                     docs = []
                     for offset_scale in xrange(passed_intervals):
                         offset = self.interval * offset_scale
