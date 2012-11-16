@@ -48,20 +48,20 @@ rolling_counters = [last_hour_counter, last_day_counter]
 
 periodic_counters = []
 # Very accurate, 6 hours counter with 1 min intervals
-periodic_counters.append(PeriodicCounter(divider=60, redis_db=redis_db,
-                                         mongo_db=mongo_db, fields=fields_keys,
-                                         redis_prefix=REDIS_PREFIX,
-                                         period=6))
+periodic_counters.append(PeriodicCounter(
+    divider=60, redis_db=redis_db,
+    mongo_db=mongo_db, fields=fields_keys,
+    redis_prefix=REDIS_PREFIX, period=6))
 # Middle accurate, 6 days(144 hours) counter with 10 min intervals
-periodic_counters.append(PeriodicCounter(divider=6, redis_db=redis_db,
-                                         mongo_db=mongo_db, fields=fields_keys,
-                                         redis_prefix=REDIS_PREFIX,
-                                         period=144))
+periodic_counters.append(PeriodicCounter(
+    divider=6, redis_db=redis_db,
+    mongo_db=mongo_db, fields=fields_keys,
+    redis_prefix=REDIS_PREFIX, period=144))
 # Low accurate, half-year(182 * 24 = 4368) counter with 60 min intervals
-periodic_counters.append(PeriodicCounter(divider=1, redis_db=redis_db,
-                                         mongo_db=mongo_db, fields=fields_keys,
-                                         redis_prefix=REDIS_PREFIX,
-                                         period=4368))
+periodic_counters.append(PeriodicCounter(
+    divider=1, redis_db=redis_db,
+    mongo_db=mongo_db, fields=fields_keys,
+    redis_prefix=REDIS_PREFIX, period=4368))
 periodic_counters = sorted(periodic_counters, key=lambda c: c.period)
 
 counters = rolling_counters + periodic_counters
@@ -174,7 +174,7 @@ def info_page(app_id, name):
         req_per_sec = float(doc['NUMBER']) / (counter.interval * 60)
         num_point = [date, req_per_sec]
         num_data.append(num_point)
-        
+
         for i, time_field in enumerate(time_fields):
             key = time_field['key']
             value = doc.get(key)
@@ -182,10 +182,11 @@ def info_page(app_id, name):
                 value = float(value) / doc['NUMBER']
             time_data[i].append([date, value])
     num_data = [num_data]
-    # Get all names from time_fields and use tham as labels
+    # Get all names from time_fields and use them as labels
     time_labels = [f['name'] for f in time_fields]
 
-    doc = mongo_db.appstats_docs.find_one({'app_id': app_id, 'name': name}) or {}
+    doc = mongo_db.appstats_docs.find_one(
+        {'app_id': app_id, 'name': name}) or {}
 
     return render_template('info_page.html', fields=visible_fields, doc=doc,
                            num_data=num_data, name=name, hours=hours,

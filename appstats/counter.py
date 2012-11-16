@@ -15,7 +15,7 @@ class RollingCounter(object):
       - 'redis_prefix' -- prefix used in each redis key to separate statistics
       data
       - 'interval' -- interval during which the counter stores the data
-      - 'secs_per_part' -- accuracy indicator, determine the time range of 
+      - 'secs_per_part' -- accuracy indicator, determine the time range of
       one part in seconds
     """
 
@@ -33,11 +33,19 @@ class RollingCounter(object):
         self.fields = fields
 
     def _make_key(self, key_format, **kwargs):
+        """
+        Return redis key produced by inserting kwargs into given `key_format`.
+        Specify format with `prefix`, `interval` and `secs_per_part` values
+        taken from counter object.
+        """
         kwargs.update(prefix=self.prefix, interval=self.interval,
                       secs_per_part=self.secs_per_part)
         return key_format % kwargs
 
     def _get_app_ids(self):
+        """
+        Return all app_ids this counter works with.
+        """
         app_ids = set()
         search_key = self._make_key(self.last_val_key_format, app_id='*',
                                     name='*', field='*')
@@ -51,6 +59,9 @@ class RollingCounter(object):
         return app_ids
 
     def _get_names(self, app_id):
+        """
+        Return all names this counter watching over.
+        """
         names = set()
         search_key = self._make_key(self.last_val_key_format, app_id=app_id,
                                     name='*', field='*')
@@ -64,6 +75,11 @@ class RollingCounter(object):
         return names
 
     def update(self):
+        """
+        Actualize counter statistics.
+        This method should be called periodically (not necessarily) with
+        period less or equal `secs_per_part` for better accuracy.
+        """
         pl = self.db.pipeline()
         now = timegm(datetime.utcnow().utctimetuple())
         for app_id in self._get_app_ids():
@@ -89,7 +105,8 @@ class RollingCounter(object):
 
                     # Check whether it is need to be updated
                     if passed_time > self.secs_per_part:
-                        num_of_new_parts = int(passed_time // self.secs_per_part)
+                        num_of_new_parts = int(
+                            passed_time // self.secs_per_part)
                         val_per_part = last_val / num_of_new_parts
 
                         # There is no need to pop and push the same values more
@@ -114,6 +131,11 @@ class RollingCounter(object):
         pl.execute()
 
     def get_vals(self):
+        """
+        Return all data counter has.
+        Result format example:
+            {'app_id1': {'name1': {'field1': 1, 'field2': 2}}}
+        """
         pl = self.db.pipeline()
         app_ids = self._get_app_ids()
         for app_id in app_ids:
@@ -140,10 +162,13 @@ class RollingCounter(object):
                     count += last_val
                     counts[field] = count
                 res[app_id][name] = counts
-        # res format example: {'app_id1': {'name1': {'field1': 1, 'field2': 2}}}
         return res
 
     def incrby(self, app_id, name, field, increment):
+        """
+        Add `increment` to value of a count
+        specified by `app_id`, `name` and `field`
+        """
         if ',' in name:
             raise ValueError("Name can't contain ',' (comma)")
         if ',' in app_id:
