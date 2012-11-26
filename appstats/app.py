@@ -144,15 +144,15 @@ def info_page(app_id, name):
     # take the last one (contains the most full data)
     if not counter:
         counter = periodic_counters[-1]
-    docs = counter.collection.find({'name': name, 'app_id': app_id,
+    docs = counter.collection.find({'app_id': app_id, 'name': name,
                                     'date': {'$gt': starting_from}})
-    docs = docs.sort('date')
+    docs = list(docs.sort('date'))
     tz = pytz.timezone('Europe/Kiev')
     # Prepare list of rows for each time_field
     time_data = [[] for _ in time_fields]
     num_data = []
     # If docs is empty, return zero value on current datetime.
-    if docs.count() == 0:
+    if not docs:
         date = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
         date = date.astimezone(tz)
         date = mktime(date.timetuple()) * 1000

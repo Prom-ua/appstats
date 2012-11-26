@@ -3,6 +3,7 @@
 from datetime import datetime, timedelta
 
 from flaskext.script import Manager
+from pymongo import ASCENDING
 
 from appstats.app import app, last_hour_counter, last_day_counter, redis_db
 from appstats.app import periodic_counters, counters, REDIS_PREFIX, mongo_db
@@ -113,6 +114,16 @@ def update():
     mongo_db.appstats_docs.remove()
     if docs:
         mongo_db.appstats_docs.insert(docs.values())
+
+    # Ensuring indexes
+    mongo_db.appstats_docs.ensure_index([('app_id', ASCENDING),
+                                         ('name', ASCENDING)],
+                                        ttl=3600)
+    for counter in periodic_counters:
+        counter.collection.ensure_index([('app_id', ASCENDING),
+                                         ('name', ASCENDING),
+                                         ('date', ASCENDING)],
+                                        ttl=3600)
 
 
 if __name__ == '__main__':
