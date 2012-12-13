@@ -137,9 +137,11 @@ class RollingCounter(object):
             {'app_id1': {'name1': {'field1': 1, 'field2': 2}}}
         """
         pl = self.db.pipeline()
-        app_ids = self._get_app_ids()
-        for app_id in app_ids:
-            names = self._get_names(app_id)
+        app_id_names = dict([
+            (app_id, self._get_names(app_id))
+            for app_id in self._get_app_ids()
+        ])
+        for app_id, names in app_id_names.iteritems():
             for name in names:
                 for field in self.fields:
                     key = self._make_key(self.key_format, name=name,
@@ -151,9 +153,8 @@ class RollingCounter(object):
                     pl.lrange(key, 0, -1)
         pl_res = pl.execute()
         res = {}
-        for app_id in app_ids:
+        for app_id, names in app_id_names.iteritems():
             res[app_id] = {}
-            names = self._get_names(app_id)
             for name in names:
                 counts = {}
                 for field in self.fields:
