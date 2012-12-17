@@ -2,6 +2,7 @@ import json
 import logging
 import threading
 from time import time
+from collections import defaultdict, Counter
 
 from requests import Session, RequestException
 
@@ -19,7 +20,7 @@ class AppStatsClient(object):
     def __init__(self, url, app_id):
         self.url = url
         self.app_id = app_id
-        self._acc = {}
+        self._acc = defaultdict(Counter)
         self._last_sent = time()
         self._session = Session(
             headers = {'Content-Type': 'application/json'},
@@ -29,11 +30,9 @@ class AppStatsClient(object):
 
     def add(self, name, counts):
         with lock:
-            acc = self._acc.setdefault(name, {'NUMBER': 0})
-            acc['NUMBER'] += 1
+            self._acc[name]['NUMBER'] += 1
             for counter in counts:
-                acc.setdefault(counter, 0)
-                acc[counter] += counts[counter]
+                self._acc[name][counter] += counts[counter]
             self._req_count += 1
 
             elapsed = time() - self._last_sent

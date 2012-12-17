@@ -137,10 +137,8 @@ class RollingCounter(object):
             {'app_id1': {'name1': {'field1': 1, 'field2': 2}}}
         """
         pl = self.db.pipeline()
-        app_id_names = dict([
-            (app_id, self._get_names(app_id))
-            for app_id in self._get_app_ids()
-        ])
+        app_id_names = {app_id: self._get_names(app_id)
+                        for app_id in self._get_app_ids()}
         for app_id, names in app_id_names.iteritems():
             for name in names:
                 for field in self.fields:
@@ -271,9 +269,7 @@ class PeriodicCounter(object):
             prev_upd_unix = timegm(prev_upd.utctimetuple())
             self.redis_db.set(prev_upd_key, prev_upd_unix)
         delta = now - prev_upd
-        # 24 * 60 = 1440
-        passed_intervals = (delta.days * 1440 +
-                            delta.seconds / 60) / self.interval
+        passed_intervals = int(delta.total_seconds() / 60 / self.interval)
         if passed_intervals == 0:
             # Too early, exiting
             return
