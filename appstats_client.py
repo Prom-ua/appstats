@@ -49,5 +49,5 @@ class AppStatsClient(object):
             log.debug('Successfully submitted app stats')
         finally:
             self._last_sent = time()
-            self._acc = {}
+            self._acc = defaultdict(Counter)
             self._req_count = 0
