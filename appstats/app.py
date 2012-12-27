@@ -35,8 +35,8 @@ redis_db = redis.Redis(host=app.config['REDIS_HOST'],
                        db=app.config['REDIS_DB'])
 REDIS_PREFIX = 'appstats'
 
-mongo_conn = Connection(host=app.config['MONGO_HOST'], network_timeout=30,
-                        port=app.config['MONGO_PORT'], _connect=False)
+mongo_conn = Connection(host=app.config['MONGO_URI'], network_timeout=30,
+                        _connect=False)
 mongo_db = mongo_conn[app.config['MONGO_DB_NAME']]
 
 last_hour_counter = RollingCounter(db=redis_db, fields=fields_keys,

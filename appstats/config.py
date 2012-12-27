@@ -2,8 +2,7 @@ REDIS_HOST = '127.0.0.1'
 REDIS_PORT = 6379
 REDIS_DB = 0
 
-MONGO_HOST = '127.0.0.1'
-MONGO_PORT = 27017
+MONGO_URI = 'mongodb://127.0.0.1:27017'
 MONGO_DB_NAME = 'appstats'
 
 APP_IDS = [dict(key='prom.ua', name='Prom.ua'),

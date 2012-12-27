@@ -3,6 +3,8 @@
 from calendar import timegm
 from datetime import datetime, timedelta, time
 
+from pymongo.errors import AutoReconnect
+
 
 class RollingCounter(object):
     """
@@ -200,6 +202,7 @@ class PeriodicCounter(object):
 
     key_format = '%(prefix)s,periodic,%(divider)s,%(app_id)s,%(name)s,%(field)s'
     prev_upd_key_format = '%(prefix)s,periodic,%(divider)s,prev_upd'
+    MAX_MONGO_RETRIES = 3
 
     def __init__(self, divider, redis_db, mongo_db, fields,
                  redis_prefix, period=720):
@@ -294,7 +297,20 @@ class PeriodicCounter(object):
                         docs.append(doc.copy())
                     # New val = 0
                     self.redis_db.set(key, 0)
-                self.collection.insert(docs)
+
+                # Make MAX_MONGO_RETRIES tries to insert docs
+                tries = self.MAX_MONGO_RETRIES
+                while True:
+                    try:
+                        self.collection.insert(docs)
+                        break
+                    except AutoReconnect:
+                        # Last try, raise exception
+                        if tries <= 0:
+                            raise
+                        tries -= 1
+
+
             prev_upd = timegm(now.utctimetuple())
             self.redis_db.set(prev_upd_key, prev_upd)
             oldest_date = now - timedelta(hours=self.period)
