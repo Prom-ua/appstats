@@ -1,9 +1,13 @@
 # encoding: utf-8
 
+import logging
 from calendar import timegm
 from datetime import datetime, timedelta, time
 
 from pymongo.errors import AutoReconnect
+
+
+log = logging.getLogger(__name__)
 
 
 class RollingCounter(object):
@@ -305,11 +309,12 @@ class PeriodicCounter(object):
                         self.collection.insert(docs)
                         break
                     except AutoReconnect:
+                        log.warrning("AutoReconnect exception while inserting "
+                                     "docs in mongo")
                         # Last try, raise exception
                         if tries <= 0:
                             raise
                         tries -= 1
-
 
             prev_upd = timegm(now.utctimetuple())
             self.redis_db.set(prev_upd_key, prev_upd)

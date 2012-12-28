@@ -95,6 +95,7 @@ app.wsgi_app = add_data_middleware(app.wsgi_app)
 
 
 def add_data(data):
+    app.logger.debug("Adding new data: \n %s", data)
     for app_id in data:
         for name, counts in data[app_id].iteritems():
             if not 'NUMBER' in counts:
