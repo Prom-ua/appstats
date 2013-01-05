@@ -22,6 +22,8 @@ if not app.config.from_envvar('APPSTATS_SETTINGS', silent=True):
     app.config.from_pyfile('/etc/appstats.cfg', silent=True)
     app.config.from_pyfile(expanduser('~/.appstats.cfg'), silent=True)
 
+APP_NAMES = dict((item['key'], item['name']) for item in app.config['APP_IDS'])
+
 time_fields = deepcopy(app.config['TIME_FIELDS'])
 fields = app.config['FIELDS'] + time_fields
 if 'NUMBER' not in [field['key'] for field in fields]:
@@ -127,6 +129,7 @@ def main_page(app_id):
                            sort_by_period=sort_by_period, docs=docs,
                            number_of_lines=number_of_lines,
                            selected_field=selected_field, app_id=app_id,
+                           app_name=APP_NAMES[app_id],
                            app_ids=app.config['APP_IDS'])
 
 
@@ -192,6 +195,7 @@ def info_page(app_id, name):
     return render_template('info_page.html', fields=visible_fields, doc=doc,
                            num_data=num_data, name=name, hours=hours,
                            selected_site=app_id, app_id=app_id,
+                           app_name=APP_NAMES[app_id],
                            app_ids=app.config['APP_IDS'],
                            time_labels=time_labels, time_data=time_data)
 

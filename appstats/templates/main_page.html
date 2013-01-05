@@ -1,8 +1,8 @@
 {% extends "layout.html" %}
 {% block body %}
     <div class="btn-group pull-right num-of-lines-switcher">
-        <button class="btn btn-inverse dropdown-toggle" data-toggle="dropdown">
-            {{ number_of_lines }}
+        <button class="btn btn-mini btn-inverse dropdown-toggle" data-toggle="dropdown">
+            {{ number_of_lines }} rows
             <span class="caret"></span>
         </button>
         <ul class="dropdown-menu">
@@ -129,5 +129,4 @@
                 {% endfor %}
             </tbody>
     </table>
-    <script src="{{ url_for('static', filename='js/bootstrap.js') }}"></script>
 {% endblock %}

@@ -1,15 +1,19 @@
 body {
-    padding-top: 45px;
+    padding-top: 18px;
+}
+
+.appstats-func-name {
+    font-family: Monaco, Menlo, Consolas, "Courier New", monospace;
 }
 
 .appstats-table td {
-  min-width: 70px;
+    min-width: 70px;
 }
 
 .appstats-table th {
-  width: 100%;
+    width: 100%;
 }
 
 .num-of-lines-switcher {
-    padding-bottom: 6px
+    margin-bottom: 20px
 }
