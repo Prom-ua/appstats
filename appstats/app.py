@@ -184,8 +184,7 @@ def info_page(app_id, name):
             value = doc.get(key)
             if value:
                 value = float(value) / doc['NUMBER']
-            time_data[i].append([date, value])
-    num_data = [num_data]
+            time_data[i].append([date, value * 1000])
     # Get all names from time_fields and use them as labels
     time_labels = [f['name'] for f in time_fields]
 

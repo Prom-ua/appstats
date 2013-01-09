@@ -56,36 +56,48 @@
             </table>
         </div>
         <div class="span7">
-            <div style="height: 300px; margin-bottom: 10px" id="num_graph"></div>
-            <div style="height: 300px;" id="time_graph"></div>
+            <div style="height: 600px; margin-bottom: 10px" id="graph"></div>
         </div>
     </div>
-
+    <style>
+    .highcharts-tooltip-name {
+        float: left;
+    }
+    .highcharts-tooltip-value {
+        min-width: 35px;
+        margin: 0px 10px 0px 5px;
+        float: left;
+    }
+    </style>
     <script>
         function _submit() {
-            hours = $('button[name="hours"].active').val();
+            var hours = $('button[name="hours"].active').val();
             document.location.href="{{ url_for(request.endpoint, app_id=app_id, name=name)}}" +
             '?' + $.param([
                 {name : 'hours', value : hours}
             ])
         }
 
-        function draw_graph(table, names, container_id) {
-            var chart;
-            var data = []
-
-            data.push({
-                name: names[0],
-                data: table[0]
-            })
-            for (var i=1; i < table.length; i++) {
-                data.push(
+        function draw_graph(rate_data, timing_data, timing_labels, container_id) {
+            var series = [
                 {
-                    stacking: 'normal',
-                    name: names[i],
-                    data: table[i]
+                    data: rate_data,
+                    name: 'RATE'
+                },
+                {
+                    data: timing_data[0],
+                    name: timing_labels[0],
+                    yAxis: 1
                 }
-                )
+            ];
+
+            for (var i=1; i < timing_labels.length; i++) {
+                series.push({
+                    data: timing_data[i],
+                    name: timing_labels[i],
+                    stacking: 'normal',
+                    yAxis: 1
+                });
             }
 
             Highcharts.setOptions({
@@ -94,12 +106,10 @@
                 }
             });
 
-            chart = new Highcharts.Chart({
+            var chart = new Highcharts.Chart({
                 chart: {
                     renderTo: container_id,
                     type: 'area',
-                    zoomType: 'y',
-                    spacingRight: 20,
                     backgroundColor: '#f5f5f5',
                     borderColor: 'rgba(0, 0, 0, 0.07)',
                     borderWidth: 1.0
@@ -113,17 +123,52 @@
                         text: null
                     }
                 },
-                yAxis: {
-                    title: {
-                        text: null
+                yAxis: [
+                    {
+                        title: {
+                            text: 'Rate, N/sec'
+                        },
+                        height: 250,
+                        startOnTick: false,
+                        showFirstLabel: false,
+                        lineWidth: 2
                     },
-                    startOnTick: false,
-                    showFirstLabel: false
-                },
+                    {
+                        title: {
+                            text: 'Timings, ms'
+                        },
+                        top: 280,
+                        height: 250,
+                        offset: 0,
+                        startOnTick: false,
+                        showFirstLabel: false,
+                        lineWidth: 2
+                    }
+                ],
                 legend: {
                     borderWidth: 0,
                     enabled: true,
                     margin: 4
+                },
+                tooltip: {
+                    shared: true,
+                    crosshairs: true,
+                    animation: false,
+                    useHTML: true,
+                    positioner: function () {
+                        return {x: 5, y: 5};
+                    },
+                    borderWidth: 2,
+                    borderColor: 'rgba(69,114,167,0.5)',
+                    backgroundColor: 'rgba(255,255,255,0.3)',
+                    valueDecimals: 1,
+                    pointFormat: '' +
+                        '<span class="highcharts-tooltip-name" style="color:{series.color};">' +
+                            '{series.name}: ' +
+                        '</span>' +
+                        '<div class="highcharts-tooltip-value">' +
+                            '<b>{point.y}</b>' +
+                        '</div>'
                 },
                 plotOptions: {
                     area: {
@@ -131,7 +176,6 @@
                         marker: {
                             enabled: false
                         },
-                        enableMouseTracking: false,
                         shadow: false,
                         lineWidth: 0
                     },
@@ -139,14 +183,15 @@
                         animation: false
                     }
                 },
-                series: data
+                series: series
             });
-            
         }
 
         $(document).ready(function() {
-            draw_graph({{ num_data|json }}, {{ ['NUMBER / sec']|safe }}, 'num_graph');
-            draw_graph({{ time_data|json }}, {{ time_labels|safe }}, 'time_graph');
+            draw_graph({{ num_data|json }},
+                       {{ time_data|json }},
+                       {{ time_labels|safe }},
+                       'graph');
         });
     </script>
     <script src="{{ url_for('static', filename='js/highcharts.js') }}"></script>
