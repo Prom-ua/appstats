@@ -8,7 +8,7 @@ from operator import itemgetter
 
 import pytz
 import redis
-from flask import Flask, render_template, request, url_for
+from flask import Flask, abort, render_template, request, url_for
 from pymongo import Connection, DESCENDING
 from werkzeug.wsgi import ClosingIterator
 
@@ -111,6 +111,8 @@ def add_data(data):
 @app.route('/', defaults={'app_id': app.config['APP_IDS'][0]['key']})
 @app.route('/<app_id>/')
 def main_page(app_id):
+    if app_id not in APP_NAMES:
+        abort(404)
     sort_by_field = request.args.get('sort_by_field', 'NUMBER')
     sort_by_period = request.args.get('sort_by_period', 'hour')
     number_of_lines = request.args.get('number_of_lines', 10, int)
@@ -135,6 +137,8 @@ def main_page(app_id):
 
 @app.route('/info/<app_id>/<name>/')
 def info_page(app_id, name):
+    if app_id not in APP_NAMES:
+        abort(404)
     hours = request.args.get('hours', 6, int)
     # Starting datetime of needed data
     starting_from = datetime.datetime.utcnow() - datetime.timedelta(hours=hours)
