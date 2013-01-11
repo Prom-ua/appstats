@@ -309,8 +309,8 @@ class PeriodicCounter(object):
                         self.collection.insert(docs)
                         break
                     except AutoReconnect:
-                        log.warrning("AutoReconnect exception while inserting "
-                                     "docs in mongo")
+                        log.warn("AutoReconnect exception while inserting "
+                                 "docs in mongo")
                         # Last try, raise exception
                         if tries <= 0:
                             raise
