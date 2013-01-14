@@ -1,0 +1,50 @@
+{% set host, port = request.host.split(':') if ':' in request.host else (request.host, request.environ.SERVER_PORT) %}
+<html>
+    <head>
+        <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+        <title>AppStats</title>
+    </head>
+    <body>
+        <pre>
+$ curl -v -<span style="color:#036;font-weight:bold">XPOST</span> -d <span style="color:#3A87AD">'
+    {
+       "prom.ua":{
+          "name1":{
+             "real_time":1.3,
+             "redis:duration":3,
+             "NUMBER":3,
+             "solr:duration":4,
+             "sql:duiration":2
+          },
+          "name2":{
+             "real_time":1.3,
+             "NUMBER":1,
+             "sql:duration":2
+          }
+       }
+    }
+'</span> -<span style="color:#036;font-weight:bold">H</span> <span style="color:#3A87AD">"Content-Type: application/json"</span> {{ url_for(request.endpoint, _external=True) }}
+<span style="color:#999999">
+* About to connect() to {{ host }} port {{ port }} (#0)
+*   Trying {{ host }}.. connected
+> POST {{ url_for(request.endpoint) }} HTTP/1.1
+> User-Agent: curl/7.22.0 (i686-pc-linux-gnu) libcurl/7.22.0 OpenSSL/1.0.1 zlib/1.2.3.4 libidn/1.23 librtmp/2.3
+> Host: {{ request.host }}
+> Accept: */*
+> Content-Type: application/json
+> Content-Length: 410
+>
+* upload completely sent off: 410out of 410 bytes
+* HTTP 1.0, assume close after body
+< HTTP/1.0 200 OK
+< Content-Type: text/html; charset=utf-8
+< Content-Length: 2
+< Server: Werkzeug/0.8.3 Python/2.7.3
+< Date: Mon, 14 Jan 2013 08:13:11 GMT
+<
+* Closing connection #0
+ok
+</span>
+        </pre>
+    </body>
+</html>

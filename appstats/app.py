@@ -1,15 +1,15 @@
 # encoding: utf-8
 
-import datetime
 from time import mktime
 from copy import deepcopy
 from os.path import expanduser
 from operator import itemgetter
+from datetime import datetime, timedelta
 
 import pytz
 import redis
 from flask import Flask, abort, render_template, request, url_for
-from pymongo import Connection, DESCENDING
+from pymongo import Connection, ASCENDING, DESCENDING
 from werkzeug.wsgi import ClosingIterator
 
 from .counter import RollingCounter, PeriodicCounter
@@ -86,20 +86,20 @@ app.jinja_env.globals['current_url'] = current_url
 def add_data_middleware(wsgi_app):
     def inner(environ, start_response):
         iterator = wsgi_app(environ, start_response)
-        data = environ.get('appstats.data')
-        if not data:
+        stats = environ.get('appstats.stats')
+        if not stats:
             return iterator
-        return ClosingIterator(iterator, lambda: add_data(data))
+        return ClosingIterator(iterator, lambda: add_data(stats))
     return inner
 
 
 app.wsgi_app = add_data_middleware(app.wsgi_app)
 
 
-def add_data(data):
-    app.logger.debug("Adding new data: \n %s", data)
-    for app_id in data:
-        for name, counts in data[app_id].iteritems():
+def add_data(stats):
+    app.logger.debug("Adding new stats: \n %s", stats)
+    for app_id in stats:
+        for name, counts in stats[app_id].iteritems():
             if not 'NUMBER' in counts:
                 for counter in counters:
                     counter.incrby(app_id, name, 'NUMBER', 1)
@@ -141,7 +141,7 @@ def info_page(app_id, name):
         abort(404)
     hours = request.args.get('hours', 6, int)
     # Starting datetime of needed data
-    starting_from = datetime.datetime.utcnow() - datetime.timedelta(hours=hours)
+    starting_from = datetime.utcnow() - timedelta(hours=hours)
     # Choosing the most suitable, accurate counter based on given hours
     counter = None
     for periodic_counter in periodic_counters:
@@ -161,7 +161,7 @@ def info_page(app_id, name):
     num_data = []
     # If docs is empty, return zero value on current datetime.
     if not docs:
-        date = datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
+        date = datetime.utcnow().replace(tzinfo=pytz.utc)
         date = date.astimezone(tz)
         date = mktime(date.timetuple()) * 1000
         num_data = [[date, 0]]
@@ -203,8 +203,33 @@ def info_page(app_id, name):
                            time_labels=time_labels, time_data=time_data)
 
 
+@app.route('/add/', methods=['GET'])
+def add_page_help():
+    return render_template('add_page_help.html')
+
+
 @app.route('/add/', methods=['POST'])
 def add_page():
-    data = request.json
-    request.environ['appstats.data'] = data
+    stats = request.json
+    request.environ['appstats.stats'] = stats
+    return 'ok'
+
+
+@app.route('/add_event/', methods=['GET'])
+def add_event_page_help():
+    return render_template('add_event_page_help.html')
+
+
+@app.route('/add_event/', methods=['POST'])
+def add_event_page():
+    events = request.json
+    if events:
+        docs = [{'app_id': event['app_id'], 'title': event['title'],
+                 'date': datetime.utcfromtimestamp(event['timestamp']),
+                 'descr': event['descr']} for event in events]
+        app.logger.debug("Adding new events: \n %s", docs)
+        mongo_db.appstats_events.insert(docs)
+    mongo_db.appstats_events.ensure_index([('date', ASCENDING),
+                                           ('app_id', ASCENDING)],
+                                          ttl=3600)
     return 'ok'
