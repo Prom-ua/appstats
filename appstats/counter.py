@@ -1,6 +1,7 @@
 # encoding: utf-8
 
 import logging
+from time import sleep
 from calendar import timegm
 from datetime import datetime, timedelta, time
 
@@ -280,6 +281,7 @@ class PeriodicCounter(object):
         if passed_intervals == 0:
             # Too early, exiting
             return
+        docs = []
         for app_id in self._get_app_ids():
             for name in self._get_names(app_id):
                 doc = dict(name=name, app_id=app_id)
@@ -290,31 +292,32 @@ class PeriodicCounter(object):
                     val = float(val) if val else 0.0
                     val_per_interval = val / passed_intervals
                     doc[field] = val_per_interval
-
-                    # For each passed interval
-                    # add separate doc with the specific date
-                    docs = []
-                    for offset_scale in xrange(passed_intervals):
-                        offset = self.interval * offset_scale
-                        date = now - timedelta(minutes=offset)
-                        doc['date'] = date
-                        docs.append(doc.copy())
                     # New val = 0
                     self.redis_db.set(key, 0)
 
-                # Make MAX_MONGO_RETRIES tries to insert docs
-                tries = self.MAX_MONGO_RETRIES
-                while True:
-                    try:
-                        self.collection.insert(docs)
-                        break
-                    except AutoReconnect:
-                        log.warn("AutoReconnect exception while inserting "
-                                 "docs in mongo")
-                        # Last try, raise exception
-                        if tries <= 0:
-                            raise
-                        tries -= 1
+                # For each passed interval
+                # add separate doc with the specific date
+                for offset_scale in xrange(passed_intervals):
+                    offset = self.interval * offset_scale
+                    date = now - timedelta(minutes=offset)
+                    doc['date'] = date
+                    docs.append(doc.copy())
+
+        if docs:
+            # Make MAX_MONGO_RETRIES tries to insert docs
+            tries = self.MAX_MONGO_RETRIES
+            while True:
+                try:
+                    self.collection.insert(docs)
+                    break
+                except AutoReconnect:
+                    log.warn("AutoReconnect exception while inserting "
+                             "docs in mongo")
+                    # Last try, raise exception
+                    if tries <= 0:
+                        raise
+                    tries -= 1
+                    sleep(0.5)
 
             prev_upd = timegm(now.utctimetuple())
             self.redis_db.set(prev_upd_key, prev_upd)
