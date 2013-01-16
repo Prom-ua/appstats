@@ -37,6 +37,16 @@ def clear():
 @manager.command
 def update():
     """ Update all counters, database data, refresh cache. """
+    # Ensuring indexes
+    mongo_db.appstats_docs.ensure_index([('app_id', ASCENDING),
+                                         ('name', ASCENDING)],
+                                        ttl=3600)
+    for counter in periodic_counters:
+        counter.collection.ensure_index([('app_id', ASCENDING),
+                                         ('name', ASCENDING),
+                                         ('date', ASCENDING)],
+                                        ttl=3600)
+
     for counter in counters:
         counter.update()
 
@@ -114,16 +124,6 @@ def update():
     mongo_db.appstats_docs.remove()
     if docs:
         mongo_db.appstats_docs.insert(docs.values())
-
-    # Ensuring indexes
-    mongo_db.appstats_docs.ensure_index([('app_id', ASCENDING),
-                                         ('name', ASCENDING)],
-                                        ttl=3600)
-    for counter in periodic_counters:
-        counter.collection.ensure_index([('app_id', ASCENDING),
-                                         ('name', ASCENDING),
-                                         ('date', ASCENDING)],
-                                        ttl=3600)
 
 
 if __name__ == '__main__':
