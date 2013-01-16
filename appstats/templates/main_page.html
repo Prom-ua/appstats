@@ -2,13 +2,13 @@
 {% block body %}
     <div class="btn-group pull-right num-of-lines-switcher">
         <button class="btn btn-mini btn-inverse dropdown-toggle" data-toggle="dropdown">
-            {{ number_of_lines }} rows
+            {{ rows }} rows
             <span class="caret"></span>
         </button>
         <ul class="dropdown-menu">
-            <li><a href="{{ current_url(number_of_lines=10) }}">10</a></li>
-            <li><a href="{{ current_url(number_of_lines=25) }}">25</a></li>
-            <li><a href="{{ current_url(number_of_lines=50) }}">50</a></li>
+            {% for def_rows in rows_limit_options %}
+                <li><a href="{{ current_url(rows=def_rows) }}">{{ def_rows }}</a></li>
+            {% endfor %}
         </ul>
     </div>
     <table class="table appstats-table table-bordered table-striped table-condensed table-hover">

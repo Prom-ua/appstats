@@ -64,3 +64,12 @@ def default_filter(value):
     if value is None:
         return ""
     return "%.1f" % float(value)
+
+
+def pretty_hours_filter(value):
+    hours = int(value)
+    if hours == 1:
+        return "1 hour"
+    if hours <= 24:
+        return "%u hours" % hours
+    return "%u days" % (hours / 24)

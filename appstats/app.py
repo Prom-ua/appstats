@@ -14,6 +14,7 @@ from werkzeug.wsgi import ClosingIterator
 
 from .counter import RollingCounter, PeriodicCounter
 from .filters import json_filter, time_filter, count_filter, default_filter
+from .filters import pretty_hours_filter
 
 
 app = Flask(__name__)
@@ -68,11 +69,15 @@ periodic_counters = sorted(periodic_counters, key=lambda c: c.period)
 
 counters = rolling_counters + periodic_counters
 
+ROWS_LIMIT_OPTIONS = [10, 25, 50]
+INFO_HOURS_OPTIONS = [6, 12, 24, 144, 720]
+
 
 app.jinja_env.filters['json'] = json_filter
 app.jinja_env.filters['time'] = time_filter
 app.jinja_env.filters['count'] = count_filter
 app.jinja_env.filters['default'] = default_filter
+app.jinja_env.filters['pretty_hours'] = pretty_hours_filter
 
 
 def current_url(**updates):
@@ -113,10 +118,21 @@ def add_data(stats):
 def main_page(app_id):
     if app_id not in APP_NAMES:
         abort(404)
+
     sort_by_field = request.args.get('sort_by_field', 'NUMBER')
+    if (sort_by_field not in (f['key'] for f in visible_fields)
+        and sort_by_field != 'name'):
+        abort(404)
+
     sort_by_period = request.args.get('sort_by_period', 'hour')
-    number_of_lines = request.args.get('number_of_lines', 10, int)
+
+    rows = request.args.get('rows', ROWS_LIMIT_OPTIONS[0], int)
+    if rows not in ROWS_LIMIT_OPTIONS:
+        rows = ROWS_LIMIT_OPTIONS[0]
+
     selected_field = request.args.get('selected_field', 'NUMBER')
+    if selected_field not in (f['key'] for f in visible_fields):
+        abort(404)
 
     docs = mongo_db.appstats_docs.find({'app_id': app_id})
     if sort_by_field == 'name':
@@ -124,12 +140,12 @@ def main_page(app_id):
     else:
         sort_by = '%s_%s' % (sort_by_field, sort_by_period)
         docs = docs.sort(sort_by, DESCENDING)
-    docs = docs.limit(number_of_lines)
+    docs = docs.limit(rows)
 
     return render_template('main_page.html', sort_by_field=sort_by_field,
                            fields=visible_fields,
                            sort_by_period=sort_by_period, docs=docs,
-                           number_of_lines=number_of_lines,
+                           rows=rows, rows_limit_options=ROWS_LIMIT_OPTIONS,
                            selected_field=selected_field, app_id=app_id,
                            app_name=APP_NAMES[app_id],
                            app_ids=app.config['APP_IDS'])
@@ -139,7 +155,10 @@ def main_page(app_id):
 def info_page(app_id, name):
     if app_id not in APP_NAMES:
         abort(404)
-    hours = request.args.get('hours', 6, int)
+    hours = request.args.get('hours', INFO_HOURS_OPTIONS[0], int)
+    if hours not in INFO_HOURS_OPTIONS:
+        hours = INFO_HOURS_OPTIONS[0]
+
     # Starting datetime of needed data
     starting_from = datetime.utcnow() - timedelta(hours=hours)
     # Choosing the most suitable, accurate counter based on given hours
@@ -196,6 +215,7 @@ def info_page(app_id, name):
         {'app_id': app_id, 'name': name}) or {}
 
     return render_template('info_page.html', fields=visible_fields, doc=doc,
+                           info_hours_options=INFO_HOURS_OPTIONS,
                            num_data=num_data, name=name, hours=hours,
                            selected_site=app_id, app_id=app_id,
                            app_name=APP_NAMES[app_id],
