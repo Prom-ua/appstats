@@ -29,6 +29,8 @@ def clear():
         redis_db.delete(*keys)
     # Drop mongo 'cache' collection
     mongo_db.drop_collection('appstats_docs')
+    # Drop mongo events collection
+    mongo_db.drop_collection('appstats_events')
     # Drop all mongo periodic stats collections
     for periodic_counter in periodic_counters:
         mongo_db.drop_collection(periodic_counter.collection)

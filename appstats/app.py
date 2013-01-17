@@ -217,7 +217,7 @@ def info_page(app_id, name):
     return render_template('info_page.html', fields=visible_fields, doc=doc,
                            info_hours_options=INFO_HOURS_OPTIONS,
                            num_data=num_data, name=name, hours=hours,
-                           selected_site=app_id, app_id=app_id,
+                           app_id=app_id,
                            app_name=APP_NAMES[app_id],
                            app_ids=app.config['APP_IDS'],
                            time_labels=time_labels, time_data=time_data)
