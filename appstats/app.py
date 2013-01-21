@@ -5,10 +5,11 @@ from copy import deepcopy
 from os.path import expanduser
 from operator import itemgetter
 from datetime import datetime, timedelta
+from collections import OrderedDict
 
 import pytz
 import redis
-from flask import Flask, abort, render_template, request, url_for
+from flask import Flask, abort, redirect, render_template, request, url_for
 from pymongo import Connection, ASCENDING, DESCENDING
 from werkzeug.wsgi import ClosingIterator
 
@@ -23,7 +24,7 @@ if not app.config.from_envvar('APPSTATS_SETTINGS', silent=True):
     app.config.from_pyfile('/etc/appstats.cfg', silent=True)
     app.config.from_pyfile(expanduser('~/.appstats.cfg'), silent=True)
 
-APP_NAMES = dict((item['key'], item['name']) for item in app.config['APP_IDS'])
+APPLICATIONS = OrderedDict(app.config['APPLICATIONS'])
 
 time_fields = deepcopy(app.config['TIME_FIELDS'])
 fields = app.config['FIELDS'] + time_fields
@@ -94,14 +95,12 @@ def add_data_middleware(wsgi_app):
         stats = environ.get('appstats.stats')
         if not stats:
             return iterator
-        return ClosingIterator(iterator, lambda: add_data(stats))
+        return ClosingIterator(iterator, lambda: add_stats(stats, counters))
     return inner
-
-
 app.wsgi_app = add_data_middleware(app.wsgi_app)
 
 
-def add_data(stats):
+def add_stats(stats, counters):
     app.logger.debug("Adding new stats: \n %s", stats)
     for app_id in stats:
         for name, counts in stats[app_id].iteritems():
@@ -113,10 +112,20 @@ def add_data(stats):
                     counter.incrby(app_id, name, field, val)
 
 
-@app.route('/', defaults={'app_id': app.config['APP_IDS'][0]['key']})
-@app.route('/<app_id>/')
-def main_page(app_id):
-    if app_id not in APP_NAMES:
+@app.context_processor
+def add_applications():
+    return dict(applications=APPLICATIONS)
+
+
+@app.route('/')
+def dashboard():
+    return redirect(url_for('appstats'))
+
+
+@app.route('/appstats/', defaults={'app_id': APPLICATIONS.keys()[0]})
+@app.route('/appstats/<app_id>/')
+def appstats(app_id):
+    if app_id not in APPLICATIONS:
         abort(404)
 
     sort_by_field = request.args.get('sort_by_field', 'NUMBER')
@@ -126,9 +135,9 @@ def main_page(app_id):
 
     sort_by_period = request.args.get('sort_by_period', 'hour')
 
-    rows = request.args.get('rows', ROWS_LIMIT_OPTIONS[0], int)
-    if rows not in ROWS_LIMIT_OPTIONS:
-        rows = ROWS_LIMIT_OPTIONS[0]
+    rows_limit = request.args.get('rows', ROWS_LIMIT_OPTIONS[0], int)
+    if rows_limit not in ROWS_LIMIT_OPTIONS:
+        rows_limit = ROWS_LIMIT_OPTIONS[0]
 
     selected_field = request.args.get('selected_field', 'NUMBER')
     if selected_field not in (f['key'] for f in visible_fields):
@@ -140,20 +149,20 @@ def main_page(app_id):
     else:
         sort_by = '%s_%s' % (sort_by_field, sort_by_period)
         docs = docs.sort(sort_by, DESCENDING)
-    docs = docs.limit(rows)
+    docs = docs.limit(rows_limit)
 
-    return render_template('main_page.html', sort_by_field=sort_by_field,
+    return render_template('appstats.html', sort_by_field=sort_by_field,
                            fields=visible_fields,
                            sort_by_period=sort_by_period, docs=docs,
-                           rows=rows, rows_limit_options=ROWS_LIMIT_OPTIONS,
-                           selected_field=selected_field, app_id=app_id,
-                           app_name=APP_NAMES[app_id],
-                           app_ids=app.config['APP_IDS'])
+                           rows_limit=rows_limit,
+                           rows_limit_options=ROWS_LIMIT_OPTIONS,
+                           selected_field=selected_field, app_id=app_id)
+                           
 
 
 @app.route('/info/<app_id>/<name>/')
 def info_page(app_id, name):
-    if app_id not in APP_NAMES:
+    if app_id not in APPLICATIONS:
         abort(404)
     hours = request.args.get('hours', INFO_HOURS_OPTIONS[0], int)
     if hours not in INFO_HOURS_OPTIONS:
@@ -218,8 +227,6 @@ def info_page(app_id, name):
                            info_hours_options=INFO_HOURS_OPTIONS,
                            num_data=num_data, name=name, hours=hours,
                            app_id=app_id,
-                           app_name=APP_NAMES[app_id],
-                           app_ids=app.config['APP_IDS'],
                            time_labels=time_labels, time_data=time_data)
 
 

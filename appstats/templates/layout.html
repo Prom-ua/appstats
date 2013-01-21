@@ -12,21 +12,21 @@
         <div class=container>
             <div class="navbar navbar-inverse">
                 <div class=navbar-inner>
-                    <a class="brand" href="{{ url_for('main_page', app_id=app_id) }}">AppStats</a>
+                    <a class="brand" href="{{ url_for('dashboard') }}">AppStats</a>
                     <ul class=nav>
                         <li class="dropdown">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">{{ app_name }} <b class="caret"></b></a>
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">{{ applications[app_id] }} <b class="caret"></b></a>
                             <ul class="dropdown-menu">
-                                {% for def_app_id in app_ids %}
+                                {% for def_app_id, def_app_name in applications.iteritems() %}
                                     <li>
-                                        <a href="{{ current_url(app_id=def_app_id['key']) }}">
-                                            {{ def_app_id['name'] }}
+                                        <a href="{{ current_url(app_id=def_app_id) }}">
+                                            {{ def_app_name }}
                                         </a>
                                     </li>
                                 {% endfor %}
                             </ul>
                         </li>
-{#                        <li class="active"><a>Application</a></li>#}
+                        <li class="active"><a href="{{ url_for('appstats', app_id=app_id) }}">Application</a></li>
 {#                        <li class="disabled"><a>Task queue</a></li>#}
 {#                        <li class="disabled"><a>Logs</a></li>#}
 {#                        <li class="disabled"><a>Tracing</a></li>#}
