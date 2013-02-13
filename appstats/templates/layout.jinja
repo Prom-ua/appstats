@@ -12,24 +12,28 @@
         <div class=container>
             <div class="navbar navbar-inverse">
                 <div class=navbar-inner>
-                    <a class="brand" href="{{ url_for('dashboard') }}">AppStats</a>
+                    <a class="brand" href="{{ nav_list['url'] }}">{{ nav_list['name'] }}</a>
                     <ul class=nav>
                         <li class="dropdown">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">{{ applications[app_id] }} <b class="caret"></b></a>
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                {{ nav_list['apps_list']['title'] }} <b class="caret"></b></a>
                             <ul class="dropdown-menu">
-                                {% for def_app_id, def_app_name in applications.iteritems() %}
-                                    <li>
-                                        <a href="{{ current_url(app_id=def_app_id) }}">
-                                            {{ def_app_name }}
-                                        </a>
-                                    </li>
-                                {% endfor %}
+                            {% for app_name, app_url in nav_list['apps_list']['apps'].iteritems() %}
+                                <li>
+                                    <a href="{{ app_url }}">
+                                        {{ app_name }}
+                                    </a>
+                                </li>
+                            {% endfor %}
                             </ul>
                         </li>
-                        <li class="active"><a href="{{ url_for('appstats', app_id=app_id) }}">Application</a></li>
-{#                        <li class="disabled"><a>Task queue</a></li>#}
-{#                        <li class="disabled"><a>Logs</a></li>#}
-{#                        <li class="disabled"><a>Tracing</a></li>#}
+                        {% for rate in nav_list['rates'] %}
+                            <li class={{ "active" if rate['active'] else "" }}>
+                                <a href="{{ rate['url'] }}">
+                                    {{ rate['name'] }}
+                                </a>
+                            </li>
+                        {% endfor %}
                     </ul>
                 </div>
             </div>

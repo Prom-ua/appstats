@@ -113,8 +113,53 @@ def add_stats(stats, counters):
 
 
 @app.context_processor
-def add_applications():
-    return dict(applications=APPLICATIONS)
+def add_nav_list():
+    """
+    nav_list structure:
+    {
+        'name': 'AppStats',
+        'url': '/',
+        'rates': [
+            {
+                'name': 'Application',
+                'url': '/appstats/',
+                'active': True
+            }
+        ],
+        'apps_list':{
+            'title':'App1',
+            'apps':{
+                'App1':'/url/1/',
+                'App2':'/url/2/'
+            }
+        }
+    }
+    """
+    app_id = request.view_args.get('app_id')
+    assert app_id in APPLICATIONS, "No app_id in args!"
+
+    app_name = APPLICATIONS[app_id]
+    apps = {
+        def_app_name: current_url(app_id=def_app_id)
+        for def_app_id, def_app_name
+        in APPLICATIONS.iteritems()}
+    rates = []
+    rates.append(dict(name='Application',
+                      url=url_for('appstats', app_id=app_id),
+                      active=True))
+    rates.append(dict(name='Task queue',
+                      url='',
+                      active=False))
+    rates.append(dict(name='Logs',
+                      url='',
+                      active=False))
+    rates.append(dict(name='Tracing',
+                      url='',
+                      active=False))
+    nav_list = dict(name='AppStats', url=url_for('dashboard'),
+                    rates=rates, apps_list=dict(title=app_name, apps=apps))
+
+    return dict(nav_list=nav_list)
 
 
 @app.route('/')
@@ -152,12 +197,11 @@ def appstats(app_id):
     docs = docs.limit(rows_limit)
 
     return render_template('appstats.jinja', sort_by_field=sort_by_field,
-                           fields=visible_fields,
+                           app_id=app_id, fields=visible_fields,
                            sort_by_period=sort_by_period, docs=docs,
                            rows_limit=rows_limit,
                            rows_limit_options=ROWS_LIMIT_OPTIONS,
-                           selected_field=selected_field, app_id=app_id)
-                           
+                           selected_field=selected_field)
 
 
 @app.route('/info/<app_id>/<name>/')
@@ -226,7 +270,6 @@ def info_page(app_id, name):
     return render_template('info_page.jinja', fields=visible_fields, doc=doc,
                            info_hours_options=INFO_HOURS_OPTIONS,
                            num_data=num_data, name=name, hours=hours,
-                           app_id=app_id,
                            time_labels=time_labels, time_data=time_data)
 
 

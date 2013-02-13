@@ -70,7 +70,7 @@
     <script>
         function _submit() {
             var hours = $('button[name="hours"].active').val();
-            document.location.href="{{ url_for(request.endpoint, app_id=app_id, name=name)}}" +
+            document.location.href="{{ current_url() }}" +
             '?' + $.param([
                 {name : 'hours', value : hours}
             ])
