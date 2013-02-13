@@ -151,7 +151,7 @@ def appstats(app_id):
         docs = docs.sort(sort_by, DESCENDING)
     docs = docs.limit(rows_limit)
 
-    return render_template('appstats.html', sort_by_field=sort_by_field,
+    return render_template('appstats.jinja', sort_by_field=sort_by_field,
                            fields=visible_fields,
                            sort_by_period=sort_by_period, docs=docs,
                            rows_limit=rows_limit,
@@ -223,7 +223,7 @@ def info_page(app_id, name):
     doc = mongo_db.appstats_docs.find_one(
         {'app_id': app_id, 'name': name}) or {}
 
-    return render_template('info_page.html', fields=visible_fields, doc=doc,
+    return render_template('info_page.jinja', fields=visible_fields, doc=doc,
                            info_hours_options=INFO_HOURS_OPTIONS,
                            num_data=num_data, name=name, hours=hours,
                            app_id=app_id,
@@ -232,7 +232,7 @@ def info_page(app_id, name):
 
 @app.route('/add/', methods=['GET'])
 def add_page_help():
-    return render_template('add_page_help.html')
+    return render_template('add_page_help.jinja')
 
 
 @app.route('/add/', methods=['POST'])
@@ -244,7 +244,7 @@ def add_page():
 
 @app.route('/add_event/', methods=['GET'])
 def add_event_page_help():
-    return render_template('add_event_page_help.html')
+    return render_template('add_event_page_help.jinja')
 
 
 @app.route('/add_event/', methods=['POST'])
