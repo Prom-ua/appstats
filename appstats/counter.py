@@ -21,6 +21,7 @@ class RollingCounter(object):
       - 'fields' -- list of fields names to track of
       - 'redis_prefix' -- prefix used in each redis key to separate statistics
       data
+      - 'stats' -- statistics type id
       - 'interval' -- interval during which the counter stores the data
       - 'secs_per_part' -- accuracy indicator, determine the time range of
       one part in seconds
@@ -30,10 +31,10 @@ class RollingCounter(object):
     updated_key_format = '%(prefix)s,%(app_id)s,%(name)s,%(interval)s,%(secs_per_part)s,updated,%(field)s'
     key_format = '%(prefix)s,%(app_id)s,%(name)s,%(interval)s,%(secs_per_part)s,%(field)s'
 
-    def __init__(self, db, fields, redis_prefix,
+    def __init__(self, db, fields, redis_prefix, stats='apps',
                  interval=3600, secs_per_part=60):
         self.db = db
-        self.prefix = redis_prefix
+        self.prefix = '%s_%s' % (redis_prefix, stats)
         self.interval = interval
         self.secs_per_part = secs_per_part
         self._num_of_parts = interval // secs_per_part
@@ -200,6 +201,7 @@ class PeriodicCounter(object):
       - 'fields' -- list of fields names to track of
       - 'redis_prefix' -- prefix used in each redis key to separate statistics
       data
+      - 'stats' -- statistics type id
       - 'period' -- interval in hours during which the counter stores the data.
       All data older than this value will be removed.
       Default value is 30 * 24 = 720 (30 days).
@@ -210,11 +212,11 @@ class PeriodicCounter(object):
     MAX_MONGO_RETRIES = 3
 
     def __init__(self, divider, redis_db, mongo_db, fields,
-                 redis_prefix, period=720):
+                 redis_prefix, stats='apps', period=720):
         self.redis_db = redis_db
         self.fields = fields
-        self.collection = mongo_db['appstats_periodic-%u' % divider]
-        self.prefix = redis_prefix
+        self.collection = mongo_db['appstats_%s_periodic-%u' % (stats, divider)]
+        self.prefix = '%s_%s' % (redis_prefix, stats)
         self.divider = divider
         self.period = period
         self.interval = 60 / divider

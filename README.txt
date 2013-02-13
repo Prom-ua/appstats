@@ -12,4 +12,7 @@ Run service:
     $ gunicorn --daemon --workers=8 appstats.app:app.wsgi_app
 
 Cron command:
-    * * * * * user python /path/to/appstats/manage.py update
+    */2 * * * * user python /path/to/appstats/manage.py update_cache -s 'apps'
+    */2 * * * * user python /path/to/appstats/manage.py update_cache -s 'tasks'
+    * * * * * user python /path/to/appstats/manage.py update_counters -s 'apps'
+    * * * * * user python /path/to/appstats/manage.py update_counters -s 'tasks'

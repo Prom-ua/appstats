@@ -85,7 +85,7 @@
                 {% for doc in docs %}
                     <tr>
                         <td colspan="{{ fields|length + 4 }}">
-                            <a href="{{ url_for('info_page', name=doc['name'], app_id=app_id) }}"> {{ doc['name'] }} </a>
+                            <a href="{{ url_for(info_endpoint, name=doc['name'], app_id=app_id) }}"> {{ doc['name'] }} </a>
                         </td>
                     </tr>
                     <tr>

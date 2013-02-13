@@ -5,17 +5,28 @@ from datetime import datetime, timedelta
 from flaskext.script import Manager
 from pymongo import ASCENDING
 
-from appstats.app import app, last_hour_counter, last_day_counter, redis_db
-from appstats.app import periodic_counters, counters, REDIS_PREFIX, mongo_db
+from appstats.app import app, apps_last_hour_counter, apps_last_day_counter
+from appstats.app import app, tasks_last_hour_counter, tasks_last_day_counter
+from appstats.app import apps_periodic_counters, tasks_periodic_counters
+from appstats.app import apps_counters, tasks_counters
+from appstats.app import REDIS_PREFIX, redis_db, mongo_db
+
+from appstats.util import calc_aver_data, data_to_flat_form
 
 
 manager = Manager(app)
 
 
 @manager.option('-d', '--days', dest='days', type=int, default=182)
-def strip_db(days):
+@manager.option('-s', '--stats', required=True, dest='stats',
+                choices=['apps', 'tasks'], help='Stats to strip')
+def strip_db(days, stats):
     """ Remove data older then specified number of days from db. """
     oldest_date = datetime.utcnow() - timedelta(days)
+    if stats == 'apps':
+        periodic_counters = apps_periodic_counters
+    elif stats == 'tasks':
+        periodic_counters = apps_periodic_counters
     for periodic_counter in periodic_counters:
         periodic_counter.collection.remove({'date': {'$lt': oldest_date}})
 
@@ -29,103 +40,62 @@ def clear():
         redis_db.delete(*keys)
     # Drop mongo 'cache' collection
     mongo_db.drop_collection('appstats_docs')
+    mongo_db.drop_collection('appstats_tasks_docs')
     # Drop mongo events collection
     mongo_db.drop_collection('appstats_events')
     # Drop all mongo periodic stats collections
-    for periodic_counter in periodic_counters:
+    for periodic_counter in apps_periodic_counters + tasks_periodic_counters:
         mongo_db.drop_collection(periodic_counter.collection)
 
 
-@manager.command
-def update():
-    """ Update all counters, database data, refresh cache. """
+@manager.option('-s', '--stats', required=True, dest='stats',
+                choices=['apps', 'tasks'], help='Statistics to update')
+def update_counters(stats):
+    """ Update all counters """
+    if stats == 'apps':
+        counters = apps_counters
+        periodic_counters = apps_periodic_counters
+    elif stats == 'tasks':
+        counters = tasks_counters
+        periodic_counters = tasks_periodic_counters
     # Ensuring indexes
-    mongo_db.appstats_docs.ensure_index([('app_id', ASCENDING),
-                                         ('name', ASCENDING)],
-                                        ttl=3600)
     for counter in periodic_counters:
         counter.collection.ensure_index([('app_id', ASCENDING),
                                          ('name', ASCENDING),
                                          ('date', ASCENDING)],
                                         ttl=3600)
-
     for counter in counters:
         counter.update()
 
+
+@manager.option('-s', '--stats', required=True, dest='stats',
+                choices=['apps', 'tasks'], help='Statistics to update')
+def update_cache(stats):
+    """ Update cache """
+    if stats == 'apps':
+        collection = mongo_db['appstats_docs']
+        last_hour_counter = apps_last_hour_counter
+        last_day_counter = apps_last_day_counter
+    elif stats == 'tasks':
+        collection = mongo_db['appstats_tasks_docs']
+        last_hour_counter = tasks_last_hour_counter
+        last_day_counter = tasks_last_day_counter
+    # Ensuring indexes
+    collection.ensure_index([('app_id', ASCENDING), ('name', ASCENDING)],
+                            ttl=3600)
+
     hour_data = last_hour_counter.get_vals()
     day_data = last_day_counter.get_vals()
-    day_aver_data = {}
-    hour_aver_data = {}
+    hour_aver_data = calc_aver_data(hour_data, last_hour_counter.interval)
+    day_aver_data = calc_aver_data(day_data, last_day_counter.interval)
 
-    # Calculating hour average data
-    for app_id in hour_data:
-        hour_aver_data[app_id] = {}
-        for name, counts in hour_data[app_id].iteritems():
-            req_count = counts['NUMBER']
-            h_aver_counts = {}
-            if req_count == 0:
-                for field in counts:
-                    h_aver_counts[field] = None
-                continue
-            for field in counts:
-                if field == 'NUMBER':
-                    req_per_hour = float(counts[field]) / last_hour_counter.interval
-                    h_aver_counts[field] = req_per_hour
-                else:
-                    h_aver_counts[field] = counts[field] / req_count
-            hour_aver_data[app_id][name] = h_aver_counts
-
-    # Calculating day average data
-    for app_id in day_data:
-        day_aver_data[app_id] = {}
-        for name, counts in day_data[app_id].iteritems():
-            req_count = counts['NUMBER']
-            d_aver_counts = {}
-            if req_count == 0:
-                for field in counts:
-                    d_aver_counts[field] = None
-                continue
-            for field in counts:
-                if  field == 'NUMBER':
-                    req_per_day = float(counts[field]) / last_day_counter.interval
-                    d_aver_counts[field] = req_per_day
-                else:
-                    d_aver_counts[field] = counts[field] / req_count
-            day_aver_data[app_id][name] = d_aver_counts
-
-    # Transforming data into flat form
-    docs = {}
-
-    for app_id in hour_data:
-        for name in hour_data[app_id]:
-            doc = docs.setdefault((app_id, name), dict(app_id=app_id, name=name))
-            for field in last_hour_counter.fields:
-                key = '%s_%s' % (field, 'hour')
-                doc[key] = hour_data[app_id][name][field]
-
-        for name in hour_aver_data[app_id]:
-            doc = docs.setdefault((app_id, name), dict(app_id=app_id, name=name))
-            for field in last_hour_counter.fields:
-                key = '%s_%s' % (field, 'hour_aver')
-                doc[key] = hour_aver_data[app_id][name][field]
-
-    for app_id in day_data:
-        for name in day_data[app_id]:
-            doc = docs.setdefault((app_id, name), dict(app_id=app_id, name=name))
-            for field in last_day_counter.fields:
-                key = '%s_%s' % (field, 'day')
-                doc[key] = day_data[app_id][name][field]
-
-        for name in day_aver_data[app_id]:
-            doc = docs.setdefault((app_id, name), dict(app_id=app_id, name=name))
-            for field in last_day_counter.fields:
-                key = '%s_%s' % (field, 'day_aver')
-                doc[key] = day_aver_data[app_id][name][field]
-
+    docs = data_to_flat_form(hour_data, hour_aver_data,
+                             day_data, day_aver_data,
+                             last_hour_counter.fields)
     # Replace with new data
-    mongo_db.appstats_docs.remove()
+    collection.remove()
     if docs:
-        mongo_db.appstats_docs.insert(docs.values())
+        collection.insert(docs.values())
 
 
 if __name__ == '__main__':

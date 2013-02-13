@@ -66,3 +66,58 @@ def get_chart_info(periodic_counters, time_fields, app_id, name, hours):
                 value = float(value) / doc['NUMBER']
             time_data[i].append([date, value * 1000])
     return num_data, time_data
+
+
+def calc_aver_data(data, interval):
+    """ Calculate average data based on ``interval`` """
+    aver_data = {}
+    for app_id in data:
+        aver_data[app_id] = {}
+        for name, counts in data[app_id].iteritems():
+            req_count = counts['NUMBER']
+            aver_counts = {}
+            if req_count == 0:
+                for field in counts:
+                    aver_counts[field] = None
+                continue
+            for field in counts:
+                if field == 'NUMBER':
+                    req_per_interval = float(counts[field]) / interval
+                    aver_counts[field] = req_per_interval
+                else:
+                    aver_counts[field] = counts[field] / req_count
+            aver_data[app_id][name] = aver_counts
+    return aver_data
+
+
+def data_to_flat_form(hour_data, hour_aver_data,
+                      day_data, day_aver_data, fields):
+    """ Transform data into flat form """
+    docs = {}
+
+    for app_id in hour_data:
+        for name in hour_data[app_id]:
+            doc = docs.setdefault((app_id, name), dict(app_id=app_id, name=name))
+            for field in fields:
+                key = '%s_%s' % (field, 'hour')
+                doc[key] = hour_data[app_id][name][field]
+
+        for name in hour_aver_data[app_id]:
+            doc = docs.setdefault((app_id, name), dict(app_id=app_id, name=name))
+            for field in fields:
+                key = '%s_%s' % (field, 'hour_aver')
+                doc[key] = hour_aver_data[app_id][name][field]
+
+    for app_id in day_data:
+        for name in day_data[app_id]:
+            doc = docs.setdefault((app_id, name), dict(app_id=app_id, name=name))
+            for field in fields:
+                key = '%s_%s' % (field, 'day')
+                doc[key] = day_data[app_id][name][field]
+
+        for name in day_aver_data[app_id]:
+            doc = docs.setdefault((app_id, name), dict(app_id=app_id, name=name))
+            for field in fields:
+                key = '%s_%s' % (field, 'day_aver')
+                doc[key] = day_aver_data[app_id][name][field]
+    return docs
