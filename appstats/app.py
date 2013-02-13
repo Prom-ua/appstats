@@ -1,18 +1,17 @@
 # encoding: utf-8
 
-from time import mktime
 from copy import deepcopy
 from os.path import expanduser
 from operator import itemgetter
-from datetime import datetime, timedelta
+from datetime import datetime
 from collections import OrderedDict
 
-import pytz
 import redis
 from flask import Flask, abort, redirect, render_template, request, url_for
 from pymongo import Connection, ASCENDING, DESCENDING
 from werkzeug.wsgi import ClosingIterator
 
+from .util import current_url, get_chart_info
 from .counter import RollingCounter, PeriodicCounter
 from .filters import json_filter, time_filter, count_filter, default_filter
 from .filters import pretty_hours_filter
@@ -80,12 +79,6 @@ app.jinja_env.filters['count'] = count_filter
 app.jinja_env.filters['default'] = default_filter
 app.jinja_env.filters['pretty_hours'] = pretty_hours_filter
 
-
-def current_url(**updates):
-    kwargs = request.view_args.copy()
-    kwargs.update(request.args)
-    kwargs.update(updates)
-    return url_for(request.endpoint, **kwargs)
 app.jinja_env.globals['current_url'] = current_url
 
 
@@ -212,55 +205,9 @@ def info_page(app_id, name):
     if hours not in INFO_HOURS_OPTIONS:
         hours = INFO_HOURS_OPTIONS[0]
 
-    # Starting datetime of needed data
-    starting_from = datetime.utcnow() - timedelta(hours=hours)
-    # Choosing the most suitable, accurate counter based on given hours
-    counter = None
-    for periodic_counter in periodic_counters:
-        if hours <= periodic_counter.period:
-            counter = periodic_counter
-            break
-    # If there isn't suitable counter,
-    # take the last one (contains the most full data)
-    if not counter:
-        counter = periodic_counters[-1]
-    docs = counter.collection.find({'app_id': app_id, 'name': name,
-                                    'date': {'$gt': starting_from}})
-    docs = list(docs.sort('date'))
-    tz = pytz.timezone('Europe/Kiev')
-    # Prepare list of rows for each time_field
-    time_data = [[] for _ in time_fields]
-    num_data = []
-    # If docs is empty, return zero value on current datetime.
-    if not docs:
-        date = datetime.utcnow().replace(tzinfo=pytz.utc)
-        date = date.astimezone(tz)
-        date = mktime(date.timetuple()) * 1000
-        num_data = [[date, 0]]
-        time_data = [[[date, 0]]]
-    # For each doc localize date, transform timestamp from seconds to
-    # milliseconds and append list [date, value] to data
-    for doc in docs:
-        date = doc['date'].replace(tzinfo=pytz.utc)
-        date = date.astimezone(tz)
-        date = mktime(date.timetuple()) * 1000
+    num_data, time_data = get_chart_info(periodic_counters, time_fields,
+                                         app_id, name, hours)
 
-        if doc['NUMBER'] == 0:
-            num_data.append([date, None])
-            for row in time_data:
-                row.append([date, None])
-            continue
-
-        req_per_sec = float(doc['NUMBER']) / (counter.interval * 60)
-        num_point = [date, req_per_sec]
-        num_data.append(num_point)
-
-        for i, time_field in enumerate(time_fields):
-            key = time_field['key']
-            value = doc.get(key)
-            if value:
-                value = float(value) / doc['NUMBER']
-            time_data[i].append([date, value * 1000])
     # Get all names from time_fields and use them as labels
     time_labels = [f['name'] for f in time_fields]
 
