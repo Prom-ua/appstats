@@ -176,6 +176,7 @@ def add_apps_stats_help():
     return render_template('add_page_help.jinja')
 
 
+@app.route('/add/', methods=['POST'])  # for back capability
 @app.route('/add/apps_stats', methods=['POST'])
 def add_apps_stats():
     apps_stats = request.json
