@@ -286,10 +286,10 @@ class PeriodicCounter(object):
             return
 
         # Quick fix for case, when many intervals have passed
-        if passed_intervals < MAX_PASSED_INTERVALS:
+        if passed_intervals < self.MAX_PASSED_INTERVALS:
             num_intervals = passed_intervals
         else:
-            num_intervals = MAX_PASSED_INTERVALS
+            num_intervals = self.MAX_PASSED_INTERVALS
 
         docs = []
         for app_id in self._get_app_ids():
