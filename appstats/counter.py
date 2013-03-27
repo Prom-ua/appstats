@@ -210,6 +210,7 @@ class PeriodicCounter(object):
     key_format = '%(prefix)s,periodic,%(divider)s,%(app_id)s,%(name)s,%(field)s'
     prev_upd_key_format = '%(prefix)s,periodic,%(divider)s,prev_upd'
     MAX_MONGO_RETRIES = 3
+    MAX_PASSED_INTERVALS = 10
 
     def __init__(self, divider, redis_db, mongo_db, fields,
                  redis_prefix, stats='apps', period=720):
@@ -283,6 +284,13 @@ class PeriodicCounter(object):
         if passed_intervals == 0:
             # Too early, exiting
             return
+
+        # Quick fix for case, when many intervals have passed
+        if passed_intervals < MAX_PASSED_INTERVALS:
+            num_intervals = passed_intervals
+        else:
+            num_intervals = MAX_PASSED_INTERVALS
+
         docs = []
         for app_id in self._get_app_ids():
             for name in self._get_names(app_id):
@@ -299,7 +307,7 @@ class PeriodicCounter(object):
 
                 # For each passed interval
                 # add separate doc with the specific date
-                for offset_scale in xrange(passed_intervals):
+                for offset_scale in xrange(num_intervals):
                     offset = self.interval * offset_scale
                     date = now - timedelta(minutes=offset)
                     doc['date'] = date
