@@ -1,5 +1,5 @@
 # encoding: utf-8
-
+import logging
 from copy import deepcopy
 from os.path import expanduser
 from operator import itemgetter
@@ -17,6 +17,7 @@ from .counter import RollingCounter, PeriodicCounter
 from .filters import json_filter, time_filter, count_filter, default_filter
 from .filters import pretty_hours_filter
 
+logging.basicConfig()
 
 app = Flask(__name__)
 app.config.from_object('appstats.config')

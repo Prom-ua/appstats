@@ -6,7 +6,7 @@ from flaskext.script import Manager
 from pymongo import ASCENDING
 
 from appstats.app import app, apps_last_hour_counter, apps_last_day_counter
-from appstats.app import app, tasks_last_hour_counter, tasks_last_day_counter
+from appstats.app import tasks_last_hour_counter, tasks_last_day_counter
 from appstats.app import apps_periodic_counters, tasks_periodic_counters
 from appstats.app import apps_counters, tasks_counters
 from appstats.app import REDIS_PREFIX, redis_db, mongo_db

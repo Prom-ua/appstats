@@ -82,8 +82,8 @@ def calc_aver_data(data, interval):
                 continue
             for field in counts:
                 if field == 'NUMBER':
-                    req_per_interval = float(counts[field]) / interval
-                    aver_counts[field] = req_per_interval
+                    # insert requests per second
+                    aver_counts[field] = float(counts[field]) / interval
                 else:
                     aver_counts[field] = counts[field] / req_count
             aver_data[app_id][name] = aver_counts

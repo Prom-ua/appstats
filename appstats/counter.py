@@ -304,7 +304,6 @@ class PeriodicCounter(object):
                     date = now - timedelta(minutes=offset)
                     doc['date'] = date
                     docs.append(doc.copy())
-
         if docs:
             # Make MAX_MONGO_RETRIES tries to insert docs
             tries = self.MAX_MONGO_RETRIES
